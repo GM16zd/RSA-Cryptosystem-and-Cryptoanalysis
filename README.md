@@ -18,13 +18,20 @@ The project covers RSA from all angles, serving as a rigorous deep dive into how
 
 ## 🛠️ Structure
 
-📦 rsa-bachelor-thesis
- ┣ 📂 chapters/
- ┃ ┣ 📜 01_historical_context.tex 
- ┃ ┣ 📜 02_mathematical_foundations.tex
- ┃ ┣ 📜 03_rsa_cryptosystem.tex
- ┃ ┣ 📜 04_security_foundation.tex
- ┃ ┗ 📜 05_cryptanalysis_and_attacks.tex
- ┣ 📂 code/              
- ┣ 📜 bachelor_thesis.pdf  
- ┗ 📜 README.md           
+rsa-bachelor-thesis/
+├── PFC/
+│   ├── main.tex
+│   ├── chapters/
+│   │   ├── titlepage.tex
+│   │   ├── introduction.tex
+│   │   ├── chapter1.tex
+│   │   ├── chapter2.tex
+│   │   ├── chapter3.tex
+│   │   ├── chapter4.tex
+│   │   ├── chapter5.tex
+│   │   ├── chapter6.tex
+│   │   └── bibliography.tex
+│   └── code/
+│       └── rsa_implementation.py
+├── bachelor_thesis.pdf
+└── README.md   
