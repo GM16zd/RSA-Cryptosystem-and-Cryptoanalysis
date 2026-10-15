@@ -1,0 +1,962 @@
+\chapter{Mathematical foundations}
+\section{Congruence :}
+\textbf{Definition:} If $a$ and $b$ are integers and $m$ is a positive integer, then $a$ is \textbf{congruent to $b$ modulo $m$} if $m \mid (a - b)$.
+
+\begin{itemize}
+    \item The notation $a \equiv b \pmod{m}$ says that $a$ is congruent to $b$ modulo $m$.
+    \item We say that $a \equiv b \pmod{m}$ is a \textbf{congruence} and that $m$ is its \textbf{modulus}.
+    \item Two integers are congruent mod $m$ if and only if they have the same remainder when divided by $m$.
+    \item If $a$ is not congruent to $b$ modulo $m$, we write $a \not\equiv b \pmod{m}$.
+\end{itemize}
+\textbf{Properties :}
+\begin{itemize}
+\item If $a \equiv b \pmod{m}$ and $c \equiv d \pmod{m}$, then :
+\[
+a + c \equiv b + d \pmod{m}
+\quad \text{and} \quad
+a - c \equiv b - d \pmod{m}.
+\]
+\item If $a  \equiv b \pmod{m}$ and $c  \equiv d \pmod{m}$, then $ac  \equiv bd \pmod{m}$
+\end{itemize}
+
+
+\section{Prime Numbers} 
+\label{subsec:prime}
+
+A prime number is an integer greater than 1 that has exactly two positive divisors: 1 and itself.
+\textbf{Exemples :} 2, 3, 5, 7, 11.\\
+ 
+ is 13 a prime number?
+\\We divide it by all prime numbers less than 13. Since it is not divisible by any of these primes {2,3,5,7,11} (wich are all primes lower then 13), then 13 is prime.
+
+
+\section{Rings :}
+\textbf{Definition :}
+ A ring $A$ is a set with an addition and a multiplication so that:
+\begin{itemize}
+\item $A$ is an abelian group with respect to addition, so $A$ has a zero element denoted $0$. Every $x \in A$ has an additive inverse $-x$.
+
+\item Multiplication is associative and distributive over addition, i.e.,
+\[
+(xy)z = x(yz), \quad
+x(y + z) = xy + xz, \quad
+(x + y)z = xz + yz.
+\]
+\end{itemize}
+\textbf{Exemple : }
+($\mathbb{Z}$,+,*) is a ring
+
+
+\section{Ideal}
+\textbf{Definition :}
+ An ideal of a ring $R$ is a non-empty subset $I$ satisfying :
+ \begin{enumerate}
+     \item  If $ x_1, x_2\in I$, then $x_1 + x_2 \in I$.
+     \item  If $x \in I$ and $r \in R$, then $  rx \in I$ and $xr \in I$;
+ \end{enumerate}
+ \textbf{Exemple :}
+ Let $n \in \mathbb{N}$. Then $(n\mathbb{Z}, +, \cdot)$ is an ideal of $(\mathbb{Z}, +, \cdot)$.
+
+\textbf{Proof.} Let $n \in \mathbb{N}$ and consider
+\[
+n\mathbb{Z} = \{nk \mid k \in \mathbb{Z}\}.
+\]
+
+We show that $n\mathbb{Z}$ is an ideal of $\mathbb{Z}$.
+
+\begin{itemize}
+\item \textbf{Non-empty:} We have $0 = n \cdot 0 \in n\mathbb{Z}$, so $n\mathbb{Z} \neq \emptyset$.
+
+\item \textbf{Closed under addition:} Let $a, b \in n\mathbb{Z}$. Then there exist $k, \ell \in \mathbb{Z}$ such that $a = nk$ and $b = n\ell$. Hence,
+\[
+a + b = nk + n\ell = n(k + \ell) \in n\mathbb{Z}.
+\]
+
+\item \textbf{Absorption by $\mathbb{Z}$:} Let $a \in n\mathbb{Z}$ and $z \in \mathbb{Z}$. Then $a = nk$ for some $k \in \mathbb{Z}$, and
+\[
+za = z(nk) = n(zk) \in n\mathbb{Z}.
+\]
+\end{itemize}
+
+Thus, $n\mathbb{Z}$ is an ideal of $\mathbb{Z}$. 
+\section{Quotient Ring :}
+Let $R$ be a ring and let $I$ be an ideal of $R$. We define a relation on $R$ by
+\[
+a \equiv b \pmod{I} \quad \text{if and only if} \quad a - b \in I.
+\]
+
+The equivalence class of an element $a \in R$ is given by
+\[
+a + I = \{a + x \mid x \in I\},
+\]
+and the set of all such classes is denoted by
+\[
+R/I.
+\]
+
+We define addition and multiplication on $R/I$ by
+\[
+(a + I) + (b + I) = (a + b) + I,
+\]
+\[
+(a + I)(b + I) = ab + I.
+\]
+
+With these operations, $R/I$ is a ring, called the \textbf{quotient ring} of $R$ by $I$
+This result is classical in number theory\footnote{G. H. Hardy and E. M. Wright, \textit{An Introduction to the Theory of Numbers}.}.
+\textbf{Exemple :}
+$\mathbb{Z} / 5\mathbb{Z}$\\
+\textbf{Remark :}
+ From Subchapters 1.4 to 1.8, we wanted to introduce $\mathbb{Z} / n\mathbb{Z}$ because we will need it later on proves .
+ \section{Units in a Ring}
+
+Let $R$ be a ring with identity element $1_R$. An element $u \in R$ is called a \textbf{unit} if there exists $v \in R$ such that
+\[
+uv = vu = 1_R.
+\]
+The set of all units is denoted by $R^\times$, and it forms a group under multiplication.
+
+This notion comes from standard ring theory\footnote{Basic algebra texts such as D. Perrin, \textit{Cours d’algèbre}.}.
+
+\textbf{Example.} In $\mathbb{Z}$, the only units are $1$ and $-1$.
+
+\textbf{Connection with RSA.} RSA requires computing multiplicative inverses modulo $\varphi(n)$, which means working inside the group of units $(\mathbb{Z}/n\mathbb{Z})^\times$.
+
+\section{The Ring $\mathbb{Z}/n\mathbb{Z}$}
+
+Let $n \in \mathbb{N}^*$. The quotient ring $\mathbb{Z}/n\mathbb{Z}$ is defined as the set of equivalence classes:
+\[
+\mathbb{Z}/n\mathbb{Z} = \{0,1,\dots,n-1\},
+\]
+where
+\[
+a \equiv b \pmod{n} \iff n \mid (a-b).
+\]
+
+This construction is standard in number theory and modular arithmetic\footnote{G. H. Hardy and E. M. Wright, \textit{An Introduction to the Theory of Numbers}.}.
+
+\textbf{Example.} In $\mathbb{Z}/5\mathbb{Z}$:
+\[
+3+4 \equiv 2 \pmod{5}, \quad 2 \cdot 4 \equiv 3 \pmod{5}.
+\]
+
+\textbf{Connection with RSA.} RSA works in $\mathbb{Z}/N\mathbb{Z}$ where $N = pq$. Encryption and decryption are given by:
+\[
+c \equiv m^e \pmod{N}, \qquad m \equiv c^d \pmod{N},
+\]
+with $ed \equiv 1 \pmod{\varphi(N)}$. The existence of $d$ relies on modular inverses computed using the extended Euclidean algorithm.
+\section{GCD and euclide algorithme}
+\textbf{Definition :}
+The GCD of two integers is the biggest number that divides both without leaving a remainder.
+\textbf{Euclidean Algorithm}
+
+This is the efficient way to find the GCD. Instead of guessing like it’s a lottery, you systematically reduce the problem.
+
+Given two integers $0 < b < a$, we repeatedly apply the division algorithm to obtain a sequence of equations, which eventually terminates with a zero remainder:
+\begin{align*}
+a &= bq_1 + r_1, \quad 0 < r_1 < b, \\
+b &= r_1 q_2 + r_2, \quad 0 < r_2 < r_1, \\
+r_1 &= r_2 q_3 + r_3, \quad 0 < r_3 < r_2, \\
+&\;\;\vdots \\
+r_{j-2} &= r_{j-1} q_j + r_j, \quad 0 < r_j < r_{j-1}, \\
+r_{j-1} &= r_j q_{j+1}.
+\end{align*}
+
+The greatest common divisor $\gcd(a,b)$ is $r_j$, the last nonzero remainder in the division process.
+
+\bigskip
+
+\textbf{Example  : } Find the gcd of $42823$ and $6409$.
+
+\textbf{Solution.}
+\begin{align*}
+42823 &= 6409 \cdot 6 + 4369 \\
+6409 &= 4369 \cdot 1 + 2040 \\
+4369 &= 2040 \cdot 2 + 289 \\
+2040 &= 289 \cdot 7 + 17 \\
+289 &= 17 \cdot 17 \\
+\end{align*}
+
+Therefore,
+\[
+\gcd(42823, 6409) = 17.
+\]
+
+\textbf{Proof of the Euclidean Algorithm.}
+
+Let $a, b \in \mathbb{Z}$ with $b \neq 0$. By the division algorithm, there exist integers $q$ and $r$ such that
+\[
+a = bq + r \quad \text{with} \quad 0 \le r < |b|.
+\]
+We prove that $\gcd(a,b) = \gcd(b,r)$.
+
+Let $d$ be a common divisor of $a$ and $b$. Then $d \mid a$ and $d \mid b$. Since $r = a - bq$, it follows that
+\[
+d \mid (a - bq) \Rightarrow d \mid r.
+\]
+Thus, every common divisor of $a$ and $b$ is also a common divisor of $b$ and $r$.
+
+Conversely, let $d$ be a common divisor of $b$ and $r$. Then $d \mid b$ and $d \mid r$. Since $a = bq + r$, we get
+\[
+d \mid (bq + r) \Rightarrow d \mid a.
+\]
+Thus, every common divisor of $b$ and $r$ is also a common divisor of $a$ and $b$.
+
+Therefore, the sets of common divisors are the same, and we conclude that.
+\[
+\gcd(a,b) = \gcd(b,r).
+\]
+Since the remainder strictly decreases at each step, the algorithm terminates, and the last nonzero remainder is the greatest common divisor.
+\footnote{Daniel Perrin, \textit{Cours d’algèbre}.}\\
+\textbf{ Defenition :}
+ $a$ and $b$ are said to be \textbf{coprimer} if:
+$gcd(a,b)=1$
+and this is what will take us to the Bezout theorem
+\section{Bezout's theorem :}
+Let $a$ and $b$ be integers with at least one of them not zero. Let $d = \gcd(a, b)$ be their greatest common divisor. Then there exist integers $u$ and $v$ such that:
+\begin{equation*}
+    au + bv = d
+\end{equation*}
+Furthermore, the set of all integers of the form $ax + by$ consists of all the multiples of $d$.\\
+\textbf{Remark :} 
+\[
+\operatorname{sgn}(a) =
+\begin{cases}
+1 & \text{if } a > 0 \\
+0 & \text{if } a = 0 \\
+-1 & \text{if } a < 0
+\end{cases}
+\]
+\textbf{proof :}\\
+Consider the set $S$ of all positive linear combinations of $a$ and $b$:
+\[ S = \{ am + bn \mid m, n \in \mathbb{Z}, am + bn > 0 \} \]
+The set $S$ is non-empty. For example, if $a \neq 0$, then $|a| = a \cdot \text{sgn}(a) + b \cdot 0$ belongs to $S$.
+
+Since $S$ is a non-empty set of positive integers, by the \textbf{Well-Ordering Principle}, $S$ contains a smallest element. Let this minimum element be $d$. Since $d \in S$, there exist integers $u$ and $v$ such that:
+\[ d = au + bv \]
+We will now show that $d = \gcd(a, b)$ by proving two conditions:
+
+\begin{enumerate}
+    \item \textbf{$d$ is a common divisor of $a$ and $b$:}
+    By the division algorithm, we can write $a = dq + r$ where $0 \leq r < d$. Substituting for $d$:
+    \[ r = a - dq = a - (au + bv)q = a(1 - uq) + b(-vq) \]
+    This shows that $r$ is a linear combination of $a$ and $b$. If $r > 0$, then $r \in S$. However, $r < d$, and $d$ is defined as the smallest element of $S$. This is a contradiction. Therefore, we must have $r = 0$, which means $d$ divides $a$. By the same logic, $d$ divides $b$.
+    
+    \item \textbf{$d$ is the greatest common divisor:}
+    Let $c$ be any common divisor of $a$ and $b$. Then $c$ divides $a$ and $c$ divides $b$. It follows that $c$ must divide any linear combination of $a$ and $b$. In particular, $c$ divides $au + bv = d$. Since $c$ divides $d$ and $d > 0$, we have $c \leq d$.
+\end{enumerate}
+
+Since $d$ is a common divisor and no common divisor is greater than $d$, we conclude that $d = \gcd(a, b)$.\\
+\footnote{Daniel Perrin, \textit{Cours d’algèbre}.}\\
+\textbf{Remark :} To find the u and v from the definition, we should use an algorithm named the Extended Euclidean Algorithm.
+\section{Extended Euclidean Algorithm :}
+
+In this note we are given two positive integers $a > b$. Recall that Euclid’s algorithm
+finds $gcd(a,b)$ by repeated division, with the greatest common divisor being the
+last nonzero remainder.
+The Euclidean algorithm is quite easy to follow. The extended Euclidean algorithm uses data found during the Euclidean algorithm to find solutions $x$ and $y$ to
+the equation :
+$$ax +by = gcd(a,b).$$
+
+
+We define sequences $(r_i)$, $(x_i)$, and $(y_i)$ as follows:
+
+\[
+r_0 = a, \quad r_1 = b
+\]
+\[
+x_0 = 1, \quad x_1 = 0
+\]
+\[
+y_0 = 0, \quad y_1 = 1
+\]
+
+For $i \geq 1$, perform the division:
+\[
+r_{i-1} = q_i r_i + r_{i+1}
+\]
+
+and update:
+\[
+x_{i+1} = x_{i-1} - q_i x_i
+\]
+\[
+y_{i+1} = y_{i-1} - q_i y_i
+\]
+
+The algorithm stops when $r_{n+1} = 0$. Then:
+\[
+\gcd(a,b) = r_n
+\]
+and the integers $x_n$ and $y_n$ satisfy:
+\[
+ax_n + by_n = \gcd(a,b).
+\]
+\textbf{Exemple :}
+$$ax +by = gcd(a,b).$$
+with $a=2011$ and $b=1534$ , define $x$ and $y$ ?\\
+we first should use the  Euclidean Algorithm :
+\[
+\begin{aligned}
+2011 &= 1534 \cdot 1 + 477 \\
+1534 &= 477 \cdot 3 + 103 \\
+477  &= 103 \cdot 4 + 65 \\
+103  &= 65 \cdot 1 + 38 \\
+65   &= 38 \cdot 1 + 27 \\
+38   &= 27 \cdot 1 + 11 \\
+27   &= 11 \cdot 2 + 5 \\
+11   &= 5 \cdot 2 + 1 \\
+5    &= 1 \cdot 5
+\end{aligned}
+\]
+Notice how the remainders migrate to the left from one line to the next.
+Now we turn to solving the equation
+\[
+ax + by = 1.
+\]
+First, the basic idea: We are trying to write the greatest common divisor (which is
+the last remainder, 1 in this case) as a (linear) combination of $a$ and $b$. Clearly, the
+first line in the algorithm expresses the first remainder as such a combination:
+\[
+477 = a - b.
+\]
+And the next line expresses the next remainder $103$ as a combination of the previous two remainders $1534$ and $477$, and thus as a combination of $a$ and $b$,
+\[
+103 = b - 477 \cdot 3 = b - (a - b)\cdot 3 = -a + 4b
+\]
+and so we can proceed downwards until we reach the bottom.
+
+However, we can effectively halve the work by reducing everything modulo one
+of the original numbers! Let $\equiv$ stand for congruence modulo $a = 2011$. On the left
+below is the original Euclid’s algorithm, on the right is the new calculation. Notice
+that the new name of the game is to write each remainder as a multiple of $b$ modulo $a$.
+Each line on the right is first a rewrite on the line on its left, then simplifying
+using data from the two lines above (except for the opening moves):
+
+\[
+\begin{aligned}
+2011 &= 1534 \cdot 1 + 477 & 477 &\equiv -1534 = -b \\
+1534 &= 477 \cdot 3 + 103 & 103 &= 1534 - 477 \cdot 3 \equiv b - (-b)\cdot 3 = 4b \\
+477 &= 103 \cdot 4 + 65 & 65 &= 477 - 103 \cdot 4 \equiv -b - 4b \cdot 4 = -17b \\
+103 &= 65 \cdot 1 + 38 & 38 &= 103 - 65 \cdot 1 \equiv 4b - (-17b) = 21b \\
+65 &= 38 \cdot 1 + 27 & 27 &= 65 - 38 \cdot 1 \equiv -17b - 21b = -38b \\
+38 &= 27 \cdot 1 + 11 & 11 &= 38 - 27 \cdot 1 \equiv 21b - (-38b) = 59b \\
+27 &= 11 \cdot 2 + 5 & 5 &= 27 - 11 \cdot 2 \equiv -38b - 59b \cdot 2 = -156b \\
+11 &= 5 \cdot 2 + 1 & 1 &= 11 - 5 \cdot 2 \equiv 59b - (-156b)\cdot 2 = 371b \\
+\end{aligned}
+\]
+ we have in fact shown that
+\[
+371b \equiv 1 \pmod{a},
+\]
+in other words, that $371$ is the inverse of $1534$ modulo $2011$. This sort of result is of
+course one of the reasons to perform the extended Euclidean algorithm in the first
+place, so if that were our goal, we could stop here.
+
+But we wanted to find $x$ and $y$. From what we have shown, we are pretty certain
+that $371b - 1$ is a multiple of $a$. So we perform the division:
+\[
+\frac{371b - 1}{a} = \frac{371 \cdot 1534 - 1}{2011} = 283
+\]
+with no remainder, which of course confirms our calculation and can also be rearranged as
+\[
+283a - 371b = 1,
+\]
+so a solution to the problem is
+\[
+x = 283, \quad y = -371.
+\]
+[A practical guide to the extended Euclid algorithm]\footnote{Hanche-Olsen, \textit{Extended Euclid Algorithm}.}
+
+\section{Euler's Totient Function}
+Euler's totient function $\varphi(n)$ counts the number of positive integers less than $n$ that are coprime with $n$, i.e., integers $k$ such that $\gcd(k,n) = 1$.
+\vspace{1em}\\
+\textbf{Properties:}
+\begin{itemize}
+    \item If $p$ is prime, $\varphi(p) = p-1$.
+    \item If $p$ is prime and $k \ge 1$, $\varphi(p^k) = p^k - p^{k-1}$.
+    \item If $m$ and $n$ are coprime, $\varphi(mn) = \varphi(m) \cdot \varphi(n)$.
+\end{itemize}
+\vspace{1em}
+\textbf{Example:} $\varphi(9) = 6$, since 1, 2, 4, 5, 7, 8 are coprime with 9.
+\vspace{1em}
+\\ \textbf{Applications:}  
+Euler's totient function is used in number theory, modular arithmetic, and cryptography, especially in RSA encryption..
+
+\section{Fermat's Little Theorem}
+
+\textbf{Theorem:} If $p$ is a prime number and $a$ is not divisible by $p$, then
+\[
+a^{p-1} \equiv 1 \pmod{p}.
+\]  
+\vspace{1em}
+\textbf{Corollary:} If $p-1$ divides $m$, then
+\[
+a^{m} \equiv 1 \pmod{p},
+\]
+\vspace{1em}
+\\ \textbf{Applications:} primality testing, cryptography and cryptoanalysis.
+\vspace{1em}
+\\ \textbf{Example 1:} Compute $2^6 \mod 7$.  
+Here $p = 7$ (prime) and $\gcd(2,7) = 1$. By Fermat's theorem:  
+\[
+2^{7-1} = 2^6 \equiv 1 \pmod{7}.
+\]  
+So $2^6 \mod 7 = 1$. Furthermore  $2^{6k} \mod 7 = 1$ for all $k \in \mathbb{N}$ .
+
+
+\section{Euler's Theorem}
+
+\textbf{Theorem:} If $a$ is coprime with $n$ (i.e., $\gcd(a,n)=1$), then
+\[
+a^{\varphi(n)} \equiv 1 \pmod{n},
+\]
+where $\varphi(n)$ is Euler's totient function (counts integers $\le n$ coprime with $n$).
+\vspace{1em}
+\\ \textbf{Applications:} cryptography, RSA, modular arithmetic simplifications.
+\\\begin{proof} \footnote{Perrin, \textit{Cours d'algèbre}.}
+The proof rests on a single key observation: multiplication by $a$ permutes
+the reduced residue system modulo $n$.
+\\
+Let $\{r_1, r_2, \ldots, r_{\varphi(n)}\}$ be the reduced residue system
+modulo $n$. Consider the set of products
+\[
+  S = \{ar_1 \bmod n,\; ar_2 \bmod n,\; \ldots,\; ar_{\varphi(n)} \bmod n\}.
+\]
+
+\\
+We verify two properties:
+\begin{itemize}
+  \item \emph{Coprimality.} Since $\gcd(a, n) = 1$ and $\gcd(r_j, n) = 1$,
+    we have $\gcd(ar_j, n) = 1$ for each $j$.%
+    
+  \item \emph{Distinctness.} If $ar_i \equiv ar_j \modn{n}$, then since
+    $\gcd(a, n) = 1$ we may cancel $a$ to get $r_i \equiv r_j \modn{n}$,
+    and since $r_i, r_j \in \{1, \ldots, n\}$, this forces $r_i = r_j$.
+\end{itemize}
+We have $\varphi(n)$ distinct nonzero residues, all coprime to $n$, so
+$S = \{r_1, \ldots, r_{\varphi(n)}\}$ as sets modulo $n$.
+
+\\
+Since $S$ is a permutation of the reduced residue system, their products
+are equal modulo $n$:
+\[
+  \prod_{j=1}^{\varphi(n)} (ar_j)
+  \;\equiv\;
+  \prod_{j=1}^{\varphi(n)} r_j \mod{n}.
+\]
+Factoring out the $\varphi(n)$ copies of $a$ on the left:
+\[
+  a^{\varphi(n)} \prod_{j=1}^{\varphi(n)} r_j
+  \;\equiv\;
+  \prod_{j=1}^{\varphi(n)} r_j \mod{n}.
+\]
+
+\\
+Let $P = \prod_{j=1}^{\varphi(n)} r_j$. Since every $r_j$ satisfies
+$\gcd(r_j, n) = 1$, their product satisfies $\gcd(P, n) = 1$, so
+$P$ is invertible modulo $n$. Canceling $P$ from both sides:
+\[
+  a^{\varphi(n)} \equiv 1 \mod{n} 
+\]
+\end{proof}\footnote{Daniel Perrin, \textit{Cours d'algèbre}.}
+\vspace{1em}
+
+\textbf{Exemple :}
+ Compute $2^{100} \mod 35$ using Fermat's and Euler's theorems?\\
+
+  
+We have $35 = 5 \cdot 7$, so it is composite. $\gcd(2,35) = 1$, so Euler's theorem applies.  
+
+Compute $\varphi(35)$:  
+\[
+\varphi(35) = \varphi(5) \cdot \varphi(7) = (5-1)(7-1) = 4 \cdot 6 = 24
+\]  
+
+By Euler's theorem:  
+\[
+2^{24} \equiv 1 \pmod{35}.
+\]  
+
+Now write $100 = 24 \cdot 4 + 4$, so:  
+\[
+2^{100} = (2^{24})^4 \cdot 2^4 \equiv 1^4 \cdot 2^4 \equiv 16 \pmod{35}.
+\]  
+
+ $$2^{100} \equiv 16 \pmod{35}$$
+
+\textbf{Remark:} Here, we use Euler's theorem for the composite modulus. If the modulus is prime, Fermat's theorem would be enough.
+\section{Chinese Remainder Theorem}
+
+\textbf{Theorem (Chinese Remainder Theorem) :} Suppose that modulo $n_1, \dots, n_k$ are pairwise coprime. Then the simultaneous congruences
+\[
+x \equiv b_1 \pmod{n_1}, \quad x \equiv b_2 \pmod{n_2}, \quad \dots, \quad x \equiv b_k \pmod{n_k} 
+\]
+have a unique solution modulo $N := n_1 \cdots n_k$.
+
+Specifically, for each $i$, define $N_i = \frac{N}{n_i}$ and compute its inverse $\lambda_i$ such that
+\[
+\lambda_i N_i \equiv 1 \pmod{n_i},
+\]
+then
+\[
+x \equiv b_1 \lambda_1 N_1 + b_2 \lambda_2 N_2 + \cdots + b_k \lambda_k N_k \pmod{N}.
+\]
+
+\begin{proof}
+\medskip\noindent\textbf{Existence.}\quad
+Set $N = \prod_{i=1}^{k} n_i$ and, for each $i$, define
+\[
+  N_i = \frac{N}{n_i} = \prod_{j \neq i} n_j.
+\]
+Since the $n_j$ are pairwise coprime and each $N_i$ is a product of
+all moduli \emph{except} $n_i$, every prime factor of $n_i$ is absent
+from $N_i$. Hence $\gcd(N_i,\, n_i) = 1$.
+
+By B\'{e}zout's identity,
+there exists an integer $M_i$ satisfying
+\[
+  N_i M_i \equiv 1 \pmod{n_i}.
+\]
+We call $M_i$ the \emph{modular inverse} of $N_i$ modulo $n_i$.
+Now define the candidate solution:
+\[
+  x = \sum_{i=1}^{k} a_i N_i M_i.
+\]
+Fix an index $i$. For each $j \neq i$, the factor $n_i$ appears explicitly
+in $N_j$, so $n_i \mid N_j$, and therefore $N_j M_j \equiv 0 \modn{n_i}$.
+Every term in the sum with $j \neq i$ thus vanishes modulo $n_i$, leaving:
+\[
+  x \;\equiv\; a_i N_i M_i \;\equiv\; a_i \cdot 1 \;=\; a_i \modn{n_i}.
+\]
+Since $i$ was arbitrary, $x$ is a simultaneous solution to the entire system.
+
+\medskip\noindent\textbf{Uniqueness.}\quad
+Suppose $x$ and $y$ are both solutions. Then $n_i \mid (x - y)$ for every
+$i$. Since the $n_i$ are pairwise coprime, their product divides $x - y$
+as well,%
+\footnote{This step uses the following standard lemma: if
+  $m_1, \ldots, m_k$ are pairwise coprime and each $m_i \mid d$, then
+  $m_1 m_2 \cdots m_k \mid d$. A proof by induction on $k$ is given in
+  Ireland and Rosen~\cite{IrelandRosen1990}}
+giving $N \mid (x - y)$, hence $x \equiv y \modn{N}$.
+\end{proof}
+
+
+\textbf{Exemple :}
+We solve the system:
+\[
+x \equiv 5 \pmod{50}, \quad x \equiv 17 \pmod{31}.
+\]
+
+The moduli $50$ and $31$ are pairwise coprime, so the theorem applies. We compute:
+\[
+N = 50 \cdot 31 = 1550, \quad N_1 = 31, \quad N_2 = 50.
+\]
+
+We must therefore solve:
+\[
+\begin{cases}
+31\lambda_1 \equiv 1 \pmod{50} \Rightarrow \lambda_1 \equiv 21 \\
+50\lambda_2 \equiv 1 \pmod{31} \Rightarrow \lambda_2 \equiv 18
+\end{cases}
+\]
+
+Finally,
+\[
+x \equiv b_1\lambda_1N_1 + b_2\lambda_2N_2
+\]
+\[
+x \equiv 5 \cdot 21 \cdot 31 + 17 \cdot 18 \cdot 50
+\]
+\[
+x \equiv 1505 \pmod{1550}.
+\]
+
+
+\textbf{Remark.} The Chinese Remainder Theorem is useful in simplifying computations in RSA calculations.
+\section{Primality Tests :} 
+\subsection*{Definition }
+
+A primality test is an algorithm used to determine whether a given integer \( n > 1 \) is a prime number or a composite number. We differentiate  two types of primality tests :
+\begin{itemize}
+    \item \textbf{Deterministic primality tests}
+    \begin{itemize}
+        \item Always give a correct answer (prime or composite)
+        \item No probability of error
+        \item Based on exact mathematical proofs
+        \item Example: AKS primality test
+    \end{itemize}
+ \item \textbf{Probabilistic primality tests}
+    \begin{itemize}
+        \item Give correct answer with high probability
+        \item May have a very small error probability
+        \item Much faster for large numbers
+        \item Error probability decreases with repetition
+        \item Examples: Miller–Rabin test, Fermat test
+    \end{itemize}
+\end{itemize}
+\subsection{AKS Primality test :}
+The AKS primality test is an algorithm used to determine whether a number is prime. It was introduced in 2002 by Manindra Agrawal, Neeraj Kayal, and Nitin Saxena.
+The main characteristic of the AKS algorithm is that it is deterministic, meaning it always gives a correct answer without relying on probability. It is also the first primality test proven to run in polynomial time (it can solve the problem in a number of steps that grows at a manageable rate as the input size increases).
+Despite its theoretical importance, the AKS algorithm is not commonly used in practice because it is slower than other methods. However, it remains an important result in computer science and number theory. the algorithme is based on the next theorem :\\
+\textbf{remark} If $x \in \mathbb{R}$, we denote by $\lfloor x \rfloor$ the greatest integer $k$ such that $k \le x$ and similarly $\lceil x \rceil$ the smallest integer $k$ such that $k \ge x$.
+
+From this definition we have:
+\[
+x - 1 < \lfloor x \rfloor \le x \quad \text{and} \quad x \le \lceil x \rceil < x + 1.
+\]
+\textbf{Theorem :}Let $n \in \mathbb{N}$, $n \ge 2$, and $a \in \mathbb{Z}$ an integer coprime with $n$.  
+Then $n$ is prime if and only if:
+
+In $\mathbb{Z}_n[X]$,
+\[
+(X + a)^n = X^n + a 
+\]
+
+\textbf{Proof.} We have:
+\[
+(X + a)^n = X^n + a^n + \sum_{k=0}^{n} C_k^n X^k a^{n-k}
+\Rightarrow (X + a)^n - (X^n + a^n)
+= \sum_{k=0}^{n} C_k^n X^k a^{n-k}
+\]
+
+\[(\Rightarrow)\] For all $k \in \mathbb{N}$ such that $0 < k < n$, the coefficient of  
+$(X + a)^n - (X^n + a^n)$ is $C_k^n a^{n-k}$.
+
+
+
+For all $k \in [|1, n-1|]$,
+\[
+k C_k^n = n C_{k-1}^{n-1}
+\Rightarrow n \text{ divides } k C_k^n
+\]
+and since $\gcd(k, n) = 1$,
+\[
+n \text{ divides } C_k^n
+\]
+
+Thus,
+\[
+(X + a)^n - (X^n + a^n) \equiv 0 \ [n],
+\]
+but since $a$ is coprime with $n$, by Fermat's theorem we obtain:
+\[
+a^n = a \ [n]
+\]
+
+Hence,
+\[
+(X + a)^n - (X^n + a) \equiv 0 \ [n]
+\]
+
+\[(\Leftarrow)\] Conversely
+
+Suppose that we have:
+\[
+(X + a)^n \equiv (X^n + a)[n],
+\]
+and let $d$ be a proper divisor of $n$ such that
+\[
+1 \le d < n.
+\]
+
+We have:
+\[
+C_d^n = \frac{n}{d} C_{d-1}^{n-1} \equiv 0 \ [n]
+\]
+
+\textbf{Residues of $C_i^{n-1}$ modulo $n$:}
+
+For $i = 1$, $C_1^{n-1} = n - 1 \equiv -1 [n]$
+
+From Pascal's formula, we have:
+\[
+C_i^{n-1} + C_{i+1}^{n-1} = C_{i+1}^{n} \equiv 0 [n]
+\]
+\[
+\Rightarrow C_{i+1}^{n-1} \equiv -C_i^{n-1} [n]
+\]
+\[
+\Rightarrow C_i^{n-1} \equiv (-1)^i [n], \quad \forall 1 \le i \le n-1
+\]
+
+Thus,
+\[
+C_d^n = \frac{n}{d} C_{d-1}^{n-1} = \frac{n}{d} (-1)^{d-1} \equiv 0 [n]
+\]
+
+The last equality is true only if $d = 1$.
+
+The method proposed above is a simple test that checks whether an odd number is prime or not. It is based on a generalization of Fermat's theorem to polynomial rings over finite fields. Although this method is quite simple, its complexity is $\Omega(n)$ when evaluating the $n$ coefficients in the worst case, which is not polynomial time. A simple way to reduce this complexity is to evaluate both sides of the equation modulo a polynomial of the form $X^r - 1$, for a suitable choice of $r$, and thus the complexity will depend on the size of $r$, that is
+\[
+(X + a)^n \equiv (X^n + a) \mod (X^r - 1, n) \tag{*}
+\]
+
+In other words, it consists of computing:
+\[
+(X + a)^n \mod X^r - 1
+\quad \text{and} \quad
+X^n + a \mod (X^r - 1) = X^{n \bmod r} + a
+\]
+
+For every prime integer $n$, equality $(*)$ is verified for any values of $r$ and $a$. The converse is problematic in the sense that for some composite numbers $n$, equality $(*)$ may still hold for certain values of $r$ and $a$.
+\footnote{[1] Ngoupeyou Tondji Lionel, \textit{Mémoire de Master II (Algèbre)}, Université de Yaoundé I, 2017--2018.}  
+\\\textbf{Remark.} The notation $(X^r - 1, n)$ refers to computations in the quotient ring $(\mathbb{Z}/n\mathbb{Z})[X] / (X^r - 1)$, where coefficients are reduced modulo $n$ and polynomials are reduced modulo $X^r - 1$.
+\begin{algorithm}[H]
+\caption{AKS Primality Test}
+\KwIn{$n \in \mathbb{N},\ n \ge 2$}
+\KwOut{``prime'' or ``composite''}
+
+\If{$n = a^b$ for some $a \in \mathbb{N}$ and $b > 1$}{
+    \Return{composite}
+}
+
+Find the smallest $r$ such that $\operatorname{ord}_r(n) > \log^2(n)$\;
+
+\For{$a \leftarrow 2$ \KwTo $r$}{
+    \If{$1 < \gcd(a,n) < n$}{
+        \Return{composite}
+    }
+}
+
+\If{$n \le r$}{
+    \Return{prime}
+}
+
+\For{$a \leftarrow 1$ \KwTo $\left\lfloor \sqrt{\varphi(r)} \log(n) \right\rfloor$}{
+    \If{$(X+a)^n \not\equiv X^n + a \pmod{(X^r-1,\,n)}$}{
+        \Return{composite}
+    }
+}
+
+\Return{prime}
+\end{algorithm}
+\textbf{Remark.} The notation $\mathrm{ord}_r(n)$ denotes the multiplicative order of $n$ modulo $r$, that is, the smallest positive integer $k$ such that
+\[
+n^k \equiv 1 \pmod{r}.
+\]
+\textbf{Example :} Let us take as an example a large prime number that we already know is prime:
+\[
+n = 1000003.
+\]
+We apply the AKS primality test to verify its primality.
+
+\textbf{1. Perfect power test.} We check whether $n = a^b$ for some $a \in \mathbb{N}$ and $b > 1$.  
+The number $1000003$ is not a perfect power, so we proceed.
+
+\textbf{2. Choice of $r$.} We choose the smallest integer $r$ such that
+\[
+\mathrm{ord}_r(n) > \log^2(n).
+\]
+Since $\log^2(1000003) \approx 400$, a suitable $r$ is selected as guaranteed by the algorithm.
+
+\textbf{3. GCD test.} We check $\gcd(a,n)$ for integers $a \le r$.  
+Since $1000003$ is prime, we have $\gcd(a,1000003)=1$ for all $a<n$.
+
+\textbf{4. Size check.} Since $n > r$, we continue.
+
+\textbf{5. Polynomial test.} We verify whether
+\[
+(X + a)^n \equiv X^n + a \pmod{(X^r - 1, n)}
+\]
+for all required values of $a$.  
+Since $n$ is prime, the binomial structure ensures that the identity holds.
+
+\textbf{Conclusion.} All conditions are satisfied, hence
+\[
+1000003 \text{ is prime.}
+\]
+\subsection{Fermat Primality test :}
+he Fermat primality test is one of the simplest methods used to check whether a number is prime. It is based on Fermat’s Little Theorem, introduced by Pierre de Fermat , the Little Theorem of Fermat is the mathematical backbone of this ptimality test , For a number $n > 1$, the test checks whether:
+\[
+a^{n-1} \equiv 1 \pmod{n}
+\]
+for some number $a$ that is coprime with $n$. If this is not true, then $n$ is definitely composite. If it is true, then $n$ is probably prime.
+
+The test is called probabilistic because it can make mistakes. Sometimes a composite number can still satisfy the formula and ``pretend'' to be prime. The error comes from the fact that some values of $a$ give the correct result even when $n$ is not prime.
+
+In general, for a composite number, at least half of the choices of $a$ will detect that it is not prime. This means that if we repeat the test several times with different values of $a$, the probability of error becomes very small:
+\[
+\text{Error} \le \left(\frac{1}{2}\right)^k
+\]
+after $k$ independent tests.
+
+So, the more times you test, the safer the result becomes.
+\begin{algorithm}[H]
+\caption{Fermat Primality Test}
+\KwIn{$n > 1$}
+\KwOut{``composite'' or ``probably prime''}
+
+Choose randomly an integer $a \in \{2, 3, \dots, n-2\}$\;
+
+Compute $a^{n-1} \bmod n$\;
+
+\If{$a^{n-1} \bmod n \neq 1$}{
+    \Return{composite}
+}
+
+\Return{probably prime}
+
+\end{algorithm}
+\textbf{Example.} Let $n = 127$. We apply the Fermat primality test.
+
+We choose $a = 2 \in \{2,3,\dots,125\}$. We need to compute:
+\[
+2^{126} \bmod 127.
+\]
+
+We compute step by step using successive squaring:
+
+\[
+2^2 = 4
+\]
+\[
+2^4 = 16
+\]
+\[
+2^8 = 16^2 = 256 \equiv 2 \pmod{127}
+\]
+\[
+2^{16} = (2^8)^2 \equiv 2^2 = 4 \pmod{127}
+\]
+\[
+2^{32} = (2^{16})^2 \equiv 4^2 = 16 \pmod{127}
+\]
+\[
+2^{64} = (2^{32})^2 \equiv 16^2 = 256 \equiv 2 \pmod{127}
+\]
+
+Now we decompose:
+\[
+126 = 64 + 32 + 16 + 8 + 4 + 2
+\]
+
+So:
+\[
+2^{126} = 2^{64} \cdot 2^{32} \cdot 2^{16} \cdot 2^8 \cdot 2^4 \cdot 2^2
+\]
+
+Substitute the values modulo $127$:
+\[
+2^{126} \equiv 2 \cdot 16 \cdot 4 \cdot 2 \cdot 16 \cdot 4 \pmod{127}
+\]
+
+Now multiply step by step:
+\[
+2 \cdot 16 = 32
+\]
+\[
+32 \cdot 4 = 128 \equiv 1 \pmod{127}
+\]
+\[
+1 \cdot 2 = 2
+\]
+\[
+2 \cdot 16 = 32
+\]
+\[
+32 \cdot 4 = 128 \equiv 1 \pmod{127}
+\]
+
+Thus:
+\[
+2^{126} \equiv 1 \pmod{127}
+\]
+
+Since the condition
+\[
+a^{n-1} \equiv 1 \pmod{n}
+\]
+is satisfied, the test declares that $127$ is \textit{probably prime}.
+
+Repeating the test with other values of $a$ gives the same result. Therefore:
+\[
+127 \text{ is prime.}
+\]
+\subsection{ Miller–Rabin test :}
+ the algorithm builds on earlier ideas in number theory and computational complexity. It was developed in the 1970s ,it's a probabilistic primality test that is based on the Little Theorem of Fermat as it's foundation and this formula :
+\[
+n - 1 = 2^s \cdot d, \quad \text{where } d \text{ is odd and n is the integer we want to test }
+\] , the strength of the algorithm comes from the fact that composite numbers tend to reveal themselves under repeated random tests, making false positives extremely unlikely when enough iterations are used. Because of this balance between speed and reliability, Miller–Rabin is widely used in cryptography, especially in generating large prime numbers for encryption systems like RSA.
+\begin{algorithm}[H]
+\caption{Miller--Rabin Primality Test\label{alg:mr}}
+
+\KwInput{An integer $n > 2$}
+\KwOutput{``composite'' or ``probably prime''}
+
+\If{$n$ is even}{
+    \Return composite
+}
+
+Factor $n-1$ as $2^s \cdot t$ with $t$ odd\;
+
+$s \leftarrow 0$\;
+$t \leftarrow n - 1$\;
+
+\While{$t$ is even}{
+    $s \leftarrow s + 1$\;
+    $t \leftarrow t / 2$\;
+}
+
+Choose $x \in \{2, \dots, n-2\}$ uniformly at random\;
+
+Compute $x^t \bmod n$\;
+
+\If{$x^t \not\equiv 1 \pmod{n}$}{
+    \If{$x^t \not\equiv -1 \pmod{n}$}{
+        \For{$i = 1$ \KwTo $s$}{
+            $x \leftarrow x^2 \bmod n$\;
+
+            \If{$x \equiv 1 \pmod{n}$}{
+                \Return composite\;
+            }
+
+            \If{$x \equiv -1 \pmod{n}$}{
+                \textbf{break}\;
+            }
+        }
+        \Return composite\;
+    }
+}
+
+\Return probably prime\;
+\end{algorithm}
+
+\footnotetext{
+\label{ref:mr}
+[1] Introduction to Algorithms (CS 482), Cornell University, Instructor: Bobby Kleinberg, Lecture Notes, 5 May 2010, \textit{The Miller--Rabin Randomized Primality Test}.
+}
+\textbf{Error in  the Miller–Rabin Test :} After $k$ independent iterations, the Miller--Rabin primality test has a worst-case probability of error bounded by $(1/4)^k$, making it highly reliable in practice.
+\textbf{Example of the Miller--Rabin Test for $n=82\,589\,933$}
+
+We apply Algorithm 1 to the integer $n=82\,589\,933$.
+
+First, since $n$ is odd, we continue. We factor
+\[
+n-1 = 82\,589\,932 = 2^2 \cdot 20\,647\,483,
+\]
+so that
+\[
+s=2 \quad \text{and} \quad t=20\,647\,483.
+\]
+
+Choose $x=2$. Then
+\[
+x^t \bmod n = 2^{20\,647\,483} \bmod 82\,589\,933 = 71\,093\,132.
+\]
+Since
+\[
+71\,093\,132 \not\equiv 1 \pmod n
+\quad \text{and} \quad
+71\,093\,132 \not\equiv -1 \pmod n,
+\]
+we continue with the squaring step:
+\[
+x \leftarrow x^2 \bmod n = 71\,093\,132^2 \bmod 82\,589\,933 = 82\,589\,932.
+\]
+Now
+\[
+82\,589\,932 \equiv -1 \pmod n.
+\]
+Therefore, the algorithm returns \textbf{probably prime} and in fact it is prime.

@@ -1,0 +1,158 @@
+\chapter{ The Security Foundation of RSA}
+
+The security of the RSA cryptosystem rests on a single, well-studied assumption: the Integer Factorization Problem (IFP) is computationally infeasible for sufficiently large composite numbers when those numbers are generated correctly. Given a modulus \(n = p \cdot q\), where \(p\) and \(q\) are large, distinct primes of roughly equal size, no known classical procedure can recover \(p\) and \(q\) within a practical time frame. For properly implemented RSA – using key lengths of 2048 bits or more, strong random prime generation, and secure padding schemes – this assumed hardness guarantees that an adversary possessing only the public key \((n, e)\) cannot derive the private decryption exponent \(d\). However, the claim that RSA is secure requires more than an appeal to the difficulty of factoring; it demands an examination of every plausible path an attacker might take to break the system. The original analysis of RSA identified three direct cryptanalytic approaches, each of which attempts to avoid factoring \(n\) explicitly. A detailed examination shows that all three are, in fact, computationally equivalent to factoring \(n\). Consequently, the security of RSA stands or falls with the intractability of the IFP.
+
+\section{Direct Attack 1}
+
+One obvious way to break RSA is to compute Euler’s totient function \(\varphi(n) = (p-1)(q-1)\) directly from the public modulus \(n\), without first finding \(p\) and \(q\). If an attacker could obtain \(\varphi(n)\), then the private exponent \(d\) would be immediately recoverable as the modular inverse of the public exponent \(e\) modulo \(\varphi(n)\), using the extended Euclidean algorithm. At first glance, computing \(\varphi(n)\) might seem easier than factoring \(n\) because \(\varphi(n)\) is a function of the unknown primes. However, the two problems are computationally equivalent. Given \(\varphi(n)\) and \(n\), an attacker can easily factor \(n\) as follows:
+\begin{itemize}
+\item Compute \(p+q = n - \varphi(n) + 1\).
+\item Compute \(p-q = \sqrt{(p+q)^2 - 4n}\).
+\item Then \(p = \frac{(p+q)+(p-q)}{2}\) and \(q = \frac{(p+q)-(p-q)}{2}\).
+\end{itemize}
+Thus, any method that yields \(\varphi(n)\) can be transformed directly into a factoring algorithm. Since factoring is widely believed to be hard, computing \(\varphi(n)\) without factoring is equally hard. This equivalence also explains why \(n\) must be composite; if \(n\) were prime, \(\varphi(n)=n-1\) would be trivial to compute, and RSA would offer no security.
+
+\section{Direct Attack 2}
+
+A second direct attack attempts to find the decryption exponent \(d\) itself, bypassing both factoring \(n\) and computing \(\varphi(n)\). The attacker knows that \(d\) satisfies \(e \cdot d \equiv 1 \pmod{\varphi(n)}\), but \(\varphi(n)\) is unknown. One might imagine searching for \(d\) directly, perhaps by brute force or by solving some congruence. However, if an attacker discovers any integer \(d\) that works as a valid decryption exponent – even one different from the original \(d\) chosen by the legitimate user – then the system is broken. Finding any such \(d\) is no easier than factoring \(n\) and the reason is that knowledge of \(d\) allows the attacker to compute \(e \cdot d - 1\), which is a multiple of \(\varphi(n)\). Once a multiple of \(\varphi(n)\) is known, a classic result (due to Miller) shows that \(n\) can be factored efficiently using probabilistic methods. Therefore, the problem of determining \(d\) reduces directly to the problem of factoring \(n\). Moreover, all valid decryption exponents differ by multiples of \(\mathrm{lcm}(p-1, q-1)\); finding any one of them yields the same factoring capability. Consequently, a brute-force search for \(d\) is hopeless for large key sizes, and any shortcut that finds \(d\) would imply an efficient factoring algorithm – something not known to exist.
+
+\section{Direct Attack 3 : Breaking the Encryption Function}
+
+A third and more general cryptanalytic approach does not target \(\varphi(n)\) or \(d\) explicitly. Instead, the attacker attempts to decrypt a given ciphertext \(c\) directly by computing the \(e\)-th root of \(c\) modulo \(n\), i.e., finding \(m\) such that \(m^e \equiv c \pmod{n}\). This is precisely the problem of inverting the RSA encryption function without knowledge of the private key. Unlike factoring, the problem of computing \(e\)-th roots modulo a composite number is not a classical, well-studied hard problem with centuries of history. Nevertheless, the original RSA analysis argues that this problem is likely to be as difficult as factoring, though a formal proof has never been established. The conjecture is that any general method that can compute \(e\)-th roots modulo \(n\) without knowing the factorization could be converted into an efficient factoring algorithm. If such a conversion were proven, then breaking RSA would be provably equivalent to factoring. However, the equivalence remains unproven; it is possible (though considered unlikely by most cryptographers) that computing \(e\)-th roots is easier than factoring, even if no such method is known today. This gap between the root-extraction problem and the factoring problem is an active area of research. For practical purposes, after decades of failed attempts to find an efficient root-extraction method that bypasses factoring, the overwhelming consensus is that the two problems are equally hard for properly chosen RSA parameters.
+
+\section{RSA security }
+The security of RSA ultimately depends on the practical difficulty of the Integer Factorization Problem (IFP), to which the three direct attacks described above all reduce. Over the centuries, mathematicians have developed a wide variety of factorization algorithms—from trial division and Fermat’s difference of squares to methods exploiting smoothness (e.g., Pollard’s p−1), random walks (Pollard’s ρ), elliptic curves, and eventually the General Number Field Sieve (GNFS). Despite this rich and evolving toolkit, every classical factoring algorithm suffers from super‑polynomial or sub‑exponential time complexity. For a 2048‑bit RSA modulus (about 617 decimal digits), the GNFS—the best known classical method—requires an astronomically large number of operations, far beyond the reach of current or foreseeable classical computers. The historical record of factoring progress confirms only slow, incremental gains; each additional bit of key size demands exponentially more effort to break. Consequently, when RSA is implemented correctly with sufficiently large keys, the IFP remains a reliable one‑way function against classical adversaries.
+
+
+\section{Integer Factorization Algorithms}
+
+None of the algorithms in this section can break a properly sized RSA key—say, 2048 bits or more. Their running times are simply too slow. But that does not make them unimportant. These algorithms break small moduli quite easily, and small moduli still appear in practice: old systems, weak key generation, or coding mistakes can all lead to keys that are just a few hundred bits long. For such cases, methods like Pollard’s ρ or the quadratic sieve work surprisingly well. Understanding them also helps explain why larger keys are safe and how the more powerful General Number Field Sieve operates. So, while these algorithms are no threat to modern RSA, they are worth studying—because they break what is breakable, and they teach us why the rest is secure.
+
+\subsection{Trial Division}
+
+ Test divisibility of \(n\) by every prime number up to \(\sqrt{n}\). If a divisor is found, it is a prime factor; the process continues on the quotient.
+
+\textbf{Algorithm (conceptual):}
+1. Let \(p = 2\).
+\\2. While \(p \times p \le n\):
+   - If \(p\) divides \(n\), output \(p\) as a factor and replace \(n\) by \(n/p\).
+   - Else, move \(p\) to the next prime.
+\\3. If the remaining \(n > 1\), output \(n\) as a prime factor.
+
+For an RSA modulus \(n\) of 200 decimal digits, \(\sqrt{n}\) has about 100 digits. Even testing only primes (which are much fewer than all integers) would require an astronomical number of divisions – far beyond any conceivable computational resource.
+
+\subsection{Fermat’s Factorization Method}
+
+If a composite number \(n\) can be expressed as a difference of two squares, then the factors are directly obtained. Fermat observed that any odd composite \(n = p \cdot q\) can be written as:
+
+\[
+n = \left(\frac{p+q}{2}\right)^2 - \left(\frac{p-q}{2}\right)^2 = a^2 - b^2 = (a-b)(a+b)
+\]
+
+The algorithm searches for integers \(a\) and \(b\) satisfying this equation.
+
+\textbf{Algorithm (conceptual):}
+\\1. Set \(a = \lceil \sqrt{n} \rceil\).
+\\2. Compute \(b^2 = a^2 - n\).
+\\3. If \(b^2\) is a perfect square, then \(b = \sqrt{b^2}\) and the factors are \(a-b\) and \(a+b\).
+\\4. Otherwise, increment \(a\) by 1 and repeat from step 2.
+
+Fermat’s method is very fast when the two factors \(p\) and \(q\) are close to each other (so that \(a\) is only slightly larger than \(\sqrt{n}\)). However, in properly implemented RSA, \(p\) and \(q\) are chosen to be far apart (typically differing by several orders of magnitude), making Fermat’s method as slow as trial division.
+
+\subsection{Probabilistic Algorithms: Pollard’s Rho and \(P-1\)}
+
+In the 1970's, John Pollard introduced two algorithms that use randomness and number-theoretic properties to find factors much faster than classical methods, especially when the factor \(p\) is relatively small or has a special form.
+
+\subsubsection{Pollard’s Rho Algorithm}
+
+The algorithm defines a pseudo-random function \(f(x) = (x^2 + c) \mod n\) (with a small constant \(c\), often 1). Starting from an initial value \(x_0\) (say 2), the function generates a sequence: \(x_1 = f(x_0)\), \(x_2 = f(x_1)\), and so on. Because the sequence is computed modulo \(n\), but we are interested in the behavior modulo a prime factor \(p\) of \(n\), the sequence eventually repeats after about \(\sqrt{p}\) steps due to the birthday paradox. This repetition creates a cycle. When two values in the sequence are congruent modulo \(p\) but not modulo \(n\), their difference is a multiple of \(p\). Computing the greatest common divisor (gcd) of that difference with \(n\) reveals the factor \(p\).
+
+\textbf{Algorithm (conceptual):}
+\\1. Choose a random starting value \(x\) and a constant \(c\) (e.g., \(c=1\)).
+\\2. Set \(y = x\) (a second pointer that moves more slowly).
+\\3. Repeat:
+   \\- Update \(x = (x^2 + c) \mod n\) (fast pointer).
+  \\ - Update \(y = (y^2 + c) \mod n\) once, then again (slow pointer, so after two updates it moves one step).
+  \\ - Compute \(g = \gcd(|x-y|, n)\).
+   \\- If \(1 < g < n\), then \(g\) is a non-trivial factor of \(n\). Return \(g\).
+  \\ - If \(g = n\), restart with different \(c\) or starting values.
+\\4. Continue until a factor is found or a time limit is reached.
+
+The expected number of iterations is proportional to \(\sqrt{p}\), where \(p\) is the smallest prime factor of \(n\). Thus, if \(p\) is, say, 10 digits long, the algorithm finds it in about \(10^5\) steps – very fast. However, if both factors are large (e.g., 100 digits each), \(\sqrt{p}\) is still \(10^{50}\), which is impossible.
+
+\subsubsection{Pollard’s \(p-1\) Algorithm}
+
+This algorithm exploits Fermat’s little theorem: for a prime \(p\) and any integer \(a\) not divisible by \(p\), we have \(a^{p-1} \equiv 1 \pmod{p}\). If we can find a number \(M\) that is a multiple of \(p-1\), then \(a^M \equiv 1 \pmod{p}\), which means that \(p\) divides \(a^M - 1\). Therefore, \(\gcd(a^M - 1, n)\) will be at least \(p\). The trick is to choose \(M\) as the least common multiple of all integers up to some bound \(B\) (written \(M = \mathrm{lcm}(1,2,3,\dots,B)\)). If all prime factors of \(p-1\) are \(\le B\) (i.e., \(p-1\) is “\(B\)-smooth”), then \(M\) is a multiple of \(p-1\), and the gcd will reveal \(p\).
+
+\textbf{Algorithm (conceptual):}
+\\1. Choose a bound \(B\) (e.g., \(10^6\)).
+\\2. Compute \(M = \mathrm{lcm}(1,2,3,\dots,B)\) (or simply multiply all primes up to \(B\) raised to appropriate powers).
+\\3. Choose a random base \(a\) (e.g., 2).
+\\4. Compute \(x = a^M \mod n\) using modular exponentiation.
+\\5. Compute \(g = \gcd(x-1, n)\).
+\\6. If \(1 < g < n\), then \(g\) is a non-trivial factor.
+\\If \(g = 1\), increase \(B\) or choose a different \(a\).
+\\If \(g = n\), try a smaller \(B\) or a different \(a\).
+
+The algorithm is extremely fast when \(p-1\) is smooth – that is, composed only of small prime factors. For example, many primes used in older implementations had this property. However, modern RSA key generation avoids such primes by ensuring that both \(p-1\) and \(q-1\) have at least one large prime factor. The \(p-1\) algorithm then becomes ineffective because the required bound \(B\) would need to be as large as the largest prime factor of \(p-1\), making the computation of \(M\) and \(a^M\) infeasible.
+
+\subsection{Sub‑Exponential  Methods}
+
+The algorithms in this section represent the state of the art for classical factorization before the advent of quantum computing. They are based on a common strategy called the \textbf{congruence of squares} and achieve sub‑exponential running times – meaning they are faster than any exponential algorithm but still much slower than polynomial time.
+
+\subsubsection*{The Congruence‑of‑Squares Method in Integer Factorization and Smooth Numbers}
+
+Its core idea, first proposed as a general scheme by Kraitchik, is to find two integers \(x\) and \(y\) such that
+
+\[
+x^2 \equiv y^2 \pmod{n} \quad \text{and} \quad x \not\equiv \pm y \pmod{n}.
+\]
+
+When such a pair is found, \(\gcd(x-y, n)\) yields a non‑trivial factor of \(n\). The challenge lies in efficiently producing \(x\) and \(y\) without exhaustive search.
+
+The natural method is to generate many random integers \(z_i\) and compute their squares modulo \(n\), hoping that the product of some subset forms a perfect square. In practice, one works with the values \(z_i^2 \bmod n\) and tries to factor them over a fixed set of small primes (the \textbf{factor base}). A number that factors completely over the factor base is called \textbf{smooth}. The idea of using smooth numbers for factorization was advanced by Morrison and Brillhart, who showed that collecting enough smooth congruences allows one to combine them via linear algebra (over \(\mathbb{F}_2\)) to obtain a congruence of squares.
+
+Smooth numbers play a critical role because they are easy to work with: their prime factorisation is known, and their exponents can be manipulated to produce a square. The efficiency of modern algorithms such as Dixon’s random‑squares algorithm and the Quadratic Sieve depends on how quickly smooth numbers are found. Dixon’s algorithm simply picks random numbers and tests them for smoothness; the Quadratic Sieve dramatically speeds up this search by using a sieving process to identify smooth values without testing each candidate individually.
+
+This combination – Kraitchik’s congruence principle, Morrison and Brillhart’s smooth‑number accumulation, and sieving techniques – underpins nearly all sub‑exponential factoring algorithms, including the Quadratic Sieve and the Number Field Sieve.
+
+\subsubsection{ Quadratic Sieve (QS)}
+
+\textbf{Core idea:} The Quadratic Sieve seeks two integers \(x\) and \(y\) such that \(x^2 \equiv y^2 \pmod{n}\) but \(x \not\equiv \pm y \pmod{n}\). Then \(\gcd(x-y, n)\) gives a non‑trivial factor of \(n\). To find such a pair, the algorithm generates many numbers of the form \(Q(t) = (t + \lfloor\sqrt{n}\rfloor)^2 - n\) for various integers \(t\). These values are relatively small (on the order of \(\sqrt{n}\)). The algorithm then tries to factor each \(Q(t)\) completely using a fixed set of small primes called the \textbf{factor base}. A number that factors completely over the factor base is called \textbf{smooth}. Once enough smooth numbers are collected, linear algebra (Gaussian elimination) over \(GF(2)\) is used to combine them so that the product of the corresponding \(Q(t)\) values becomes a perfect square. That product gives the desired congruence \(x^2 \equiv y^2 \pmod{n}\).
+
+The Quadratic Sieve was the fastest classical algorithm for factoring numbers up to about 100 decimal digits. Its main weakness is that the size of the factor base and the number of smooth values required grow with the size of \(n\), making it impractical for very large numbers (hundreds of digits).
+
+\subsubsection{ Elliptic Curve Method (ECM)}
+
+\textbf{Core idea:} ECM generalizes Pollard’s \(p-1\) algorithm by replacing the multiplicative group modulo \(p\) with the group of points on a random elliptic curve over the finite field \(\mathbb{F}_p\). In Pollard’s \(p-1\), the success condition depends on the smoothness of \(p-1\), which is fixed for a given prime. In ECM, the group order of an elliptic curve modulo \(p\) is not \(p-1\) but some integer in the interval \((p-2\sqrt{p}+1, p+2\sqrt{p}+1)\) (by Hasse’s theorem). By choosing many different random curves, the algorithm effectively samples many different group orders. Eventually, with high probability, it finds a curve whose order is smooth (i.e., composed only of small primes). When that happens, the same exponentiation process as in \(p-1\) (but using elliptic curve point multiplication) will reveal the factor \(p\).
+
+The running time of ECM depends primarily on the size of the smallest prime factor \(p\) of \(n\), not on the size of \(n\) itself. This makes ECM ideal for finding medium‑sized factors (up to about 70 decimal digits) in large numbers. It has been used, for example, to find factors of Fermat numbers and to clean up “hard” composites before applying the General Number Field Sieve.
+
+\subsubsection{ General Number Field Sieve (GNFS)}
+
+The GNFS is the most powerful classical algorithm for factoring large integers (over 100 decimal digits). It extends the congruence‑of‑squares idea of the Quadratic Sieve but works in a much more abstract setting: algebraic number fields. Instead of working directly with integers modulo \(n\), the algorithm constructs two polynomial equations with a common root modulo \(n\). Then it searches for pairs of numbers that are smooth in two different number fields simultaneously. When enough such pairs are found, a combination yields a congruence of squares modulo \(n\).
+
+The algorithm requires working with rings of integers, ideals, and logarithms in number fields, but despite this complexity, the GNFS has been used to set all modern factoring records, including the factorization of RSA‑768 (a 232‑digit number) in 2009 and RSA‑250 (250 digits) in 2020.
+
+\textbf{Limitations for RSA security:} The GNFS still requires sub‑exponential time, and for a 2048‑bit RSA modulus (about 617 decimal digits), the estimated number of operations remains astronomically high – far beyond the reach of any classical computer that could be built with foreseeable technology. Therefore, as long as the modulus is large enough and generated without exploitable structure, classical factorization algorithms do not break RSA.
+
+\begin{table}[htbp]
+\centering
+\caption*{Summary of integer factorization algorithms}
+\small   % or \footnotesize for even smaller
+\setlength{\tabcolsep}{4pt}   % reduce default column padding (default is 6pt)
+\begin{tabular}{@{}lllc@{}}
+\toprule
+\textbf{Algorithm} & \textbf{Year} & \textbf{Complexity type} & \textbf{Max key size (bits / decimal digits)} \\
+\midrule
+Trial division & / & Expo & \(\approx 60\) bits (18 digits) \\
+Fermat's Method & 1643 & Expo & \(\approx 80\) bits (24 digits) \\
+Pollard's \(p-1\) & 1974 & Expo & \(\approx 100\) bits (30 digits) if \(p-1\) smooth \\
+Pollard's \(\rho\)  & 1975 & Expo & \(\approx 120\) bits (36 digits) for smallest factor \\
+ ECM & 1987 & Sub‑expo & \(\approx 280\) bits (85 digits) for smallest factor \\
+ QS & 1984 & Sub‑expo & \(\approx 330\) bits (100 decimal digits) \\
+ GNFS & 1993 & Sub‑expo & \(\approx 829\) bits (250 decimal digits) -- current record \\
+Shor's algorithm  & 1994 & Polynomial & Any key size (with fault‑tolerant quantum computer) \\
+\bottomrule
+\end{tabular}
+\end{table}

@@ -1,0 +1,1021 @@
+\chapter{RSA cryptanalysis and Padding}
+
+\section{ Wiener's Attack}
+In order to reduce decryption time (or signature-generation time), one may wish to use a small value of d rather than a random d. Since modular exponentiation takes time linear in $\log_2d$, a small d can improve performance by at least a factor of 10 (for a 1024 bit modulus). Unfortunately, a clever attack due to M. Wiener shows that a small d results in a total break of the cryptosystem. To understand Wiener’s attack on RSA with short secret exponents, we first need a fundamental mathematical tool: continued fractions.
+
+\subsection{Continued Fractions}
+\subsubsection*{Definition and Notation}
+
+A \textbf{simple continued fraction} (finite or infinite) is an expression of the form
+\[
+a_0 + \cfrac{1}{a_1 + \cfrac{1}{a_2 + \cfrac{1}{a_3 + \ddots}}}
+\]
+where \(a_0 \in \mathbb{Z}\) and \(a_1, a_2, a_3, \ldots\) are positive integers.
+For a finite continued fraction we write
+\[
+\langle a_0; a_1, a_2, \dots, a_m \rangle = a_0 + \frac{1}{a_1 + \frac{1}{a_2 + \cdots + \frac{1}{a_m}}}.
+\]
+Every rational number \(\frac{p}{q}\) (\(q>0\)) has a unique finite continued fraction expansion with the last partial quotient \(a_m \ge 2\) (except for the trivial case \(\frac{p}{q}=a_0\)).
+
+\textbf{Example:} For \(\frac{41}{13}\):
+\[
+\frac{41}{13} = 3 + \frac{2}{13} \;\Rightarrow\; a_0=3,\; \text{remainder } \frac{2}{13}.
+\]
+Invert \(\frac{13}{2}=6 + \frac12 \;\Rightarrow\; a_1=6\), remainder \(\frac12\).
+Invert \(\frac{2}{1}=2 \;\Rightarrow\; a_2=2\).
+Thus \(\frac{41}{13} = \langle 3;6,2\rangle\).
+
+\subsection*{Constructing the Continued Fraction Expansion (Algorithm)}
+
+Given a real number \(x\), the \textbf{continued fraction algorithm} produces the sequence of partial quotients \(a_i\).
+
+\begin{enumerate}
+\item Set \(x_0 = x\).
+\item For \(i = 0,1,2,\dots\):
+    \begin{itemize}
+        \item \(a_i = \lfloor x_i \rfloor\).
+        \item If \(x_i = a_i\) (i.e., integer), stop.
+        \item Otherwise set \(x_{i+1} = \dfrac{1}{x_i - a_i}\) and continue.
+    \end{itemize}
+\end{enumerate}
+If \(x\) is rational, the process terminates after finitely many steps; if \(x\) is irrational, it continues forever.
+
+\textbf{Example (rational):} \(x = \frac{2621}{8927}\) (from Wiener's paper).  
+\(a_0 = \lfloor 2621/8927 \rfloor = 0\). Then \(x_1 = 1/(2621/8927) = 8927/2621\).
+
+\begin{align*}
+8927 \div 2621 &= 3 \text{ remainder } 1064 \;\Rightarrow\; a_1=3,\; x_2 = 2621/1064,\\
+2621 \div 1064 &= 2 \text{ remainder } 493 \;\Rightarrow\; a_2=2,\; x_3 = 1064/493,\\
+1064 \div 493 &= 2 \text{ remainder } 78 \;\Rightarrow\; a_3=2,\; x_4 = 493/78,\\
+493 \div 78 &= 6 \text{ remainder } 25 \;\Rightarrow\; a_4=6,\; x_5 = 78/25,\\
+78 \div 25 &= 3 \text{ remainder } 3 \;\Rightarrow\; a_5=3,\; x_6 = 25/3,\\
+25 \div 3 &= 8 \text{ remainder } 1 \;\Rightarrow\; a_6=8,\; x_7 = 3/1,\\
+3 \div 1 &= 3 \text{ remainder } 0 \;\Rightarrow\; a_7=3,\; \text{stop}.
+\end{align*}
+Hence \(\frac{2621}{8927} = \langle 0;3,2,2,6,3,8,3\rangle\).
+
+\subsection*{Reconstructing a Fraction from Its Expansion (Convergents)}
+
+Given the partial quotients \(a_0, a_1, \dots, a_m\), we compute the \textbf{convergents} \(C_i = \frac{p_i}{q_i}\) (in lowest terms) using the recurrence:
+\[
+\begin{aligned}
+p_{-2} &= 0,\quad p_{-1} = 1, \\
+q_{-2} &= 1,\quad q_{-1} = 0, \\
+p_i &= a_i p_{i-1} + p_{i-2}, \\
+q_i &= a_i q_{i-1} + q_{i-2}, \qquad i = 0,1,\dots,m.
+\end{aligned}
+\]
+Then \(\frac{p_i}{q_i} = \langle a_0; a_1, \dots, a_i \rangle\).
+
+\textbf{Example:} For \(\langle 0;3,2\rangle\):
+\begin{align*}
+p_0 &= a_0 p_{-1}+p_{-2}=0\cdot1+0=0, & q_0 &= a_0 q_{-1}+q_{-2}=0\cdot0+1=1 &\Rightarrow& 0/1,\\
+p_1 &= a_1 p_0+p_{-1}=3\cdot0+1=1, & q_1 &= a_1 q_0+q_{-1}=3\cdot1+0=3 &\Rightarrow& 1/3,\\
+p_2 &= a_2 p_1+p_0=2\cdot1+0=2, & q_2 &= a_2 q_1+q_0=2\cdot3+1=7 &\Rightarrow& 2/7.
+\end{align*}
+Indeed \(\langle 0;3,2\rangle = 0+\frac{1}{3+\frac12}= \frac{2}{7}\).
+
+
+\subsection*{Lagrange's Best Approximation Theorem and Wiener's Attack}
+
+\textbf{Theorem (Lagrange, 18th century).}  
+Let \(x\) be a real number and let \(\frac{a}{b}\) be a rational number with \(b>0\). If
+\[
+\left| x - \frac{a}{b} \right| < \frac{1}{2b^2},
+\]
+then \(\frac{a}{b}\) is a convergent of the continued fraction expansion of \(x\).
+
+\emph{Proof.}  can be found in  Hardy \& Wright, \textit{An Introduction to the Theory of Numbers}, Chapter 10. The idea: if \(\frac{a}{b}\) is not a convergent, then there exists a convergent \(\frac{p}{q}\) with \(q \le b\) that is closer to \(x\), contradicting the inequality. 
+
+\subsection{Applying the Algorithm to RSA }
+
+We use the \textbf{LCM formulation} as in Wiener's original paper. Let \(N=pq\), and define
+\[
+L = \mathrm{lcm}(p-1,q-1).
+\]
+The RSA exponent relation is \(e d \equiv 1 \pmod{L}\), hence there exists an integer \(K\) such that
+\[
+e d = K L + 1, \qquad 1 \le K < d. \tag{1}
+\]
+Let \(G = \gcd(p-1,q-1)\); then \(L = \frac{(p-1)(q-1)}{G}\). Write \(\frac{K}{G}\) in lowest terms:
+\[
+\frac{K}{G} = \frac{k}{g}, \quad \gcd(k,g)=1.
+\]
+Substituting into (1) gives
+\[
+e d = \frac{k}{g} (p-1)(q-1) + 1.
+\]
+Multiplying by \(g\):
+\[
+e d g = k (p-1)(q-1) + g. \tag{2}
+\]
+Divide (2) by \(d g N\):
+\[
+\frac{e}{N} = \frac{k}{d g} \cdot \frac{(p-1)(q-1)}{N} + \frac{1}{d N}.
+\]
+Since \(\frac{(p-1)(q-1)}{N} = 1 - \frac{p+q-1}{N}\), we obtain
+\[
+\frac{e}{N} - \frac{k}{d g} = -\frac{k}{d g} \cdot \frac{p+q-1}{N} + \frac{1}{d N}
+= \frac{-k(p+q-1) + g}{d g N}.
+\]
+Taking absolute values,
+\[
+\left| \frac{e}{N} - \frac{k}{d g} \right| = \frac{|k(p+q-1) - g|}{d g N}. \tag{3}
+\]
+
+
+Assume that \(d < \frac13 N^{1/4}\). Also, because \(p\) and \(q\) are primes of roughly equal size, \(p+q-1 < 2\sqrt{N}\). Moreover, \(k < d\) (from \(K<d\) and \(k \le K\)) and \(g\) is typically small. A careful analysis (Wiener, Section IV) shows that under these conditions
+\[
+\left| \frac{e}{N} - \frac{k}{d g} \right| < \frac{1}{2 (d g)^2}. \tag{4}
+\]
+The fraction \(\frac{k}{d g}\) is in lowest terms because \(\gcd(k,g)=1\) by construction and \(\gcd(k,d)=1\) (from \(ed = KL+1\)). Therefore, by Lagrange's Theorem, \(\frac{k}{d g}\) \textbf{must be a convergent} of the continued fraction expansion of \(e/N\).
+
+\subsection*{Verification of a Candidate Convergent}
+
+The attacker does not know \(g\) separately, only the candidate convergent \(\frac{p_i}{q_i}\). Assume \(\frac{p_i}{q_i} = \frac{k}{d g}\); then \(q_i = d g\). To verify:
+\begin{enumerate}
+\item From (2), \(e (d g) = k (p-1)(q-1) + g\). Set \(w = q_i\). Compute \(R = e w - 1\). If \(p_i \nmid R\), discard.
+\item Let \(T = R / p_i\). Then \(T\) should equal \((p-1)(q-1)\).
+\item Compute \(s = N - T + 1 = p+q\).
+\item Compute discriminant \(\Delta = s^2 - 4N\). If \(\Delta\) is a perfect square, let \(t = \sqrt{\Delta}\). Then \(p = (s-t)/2\), \(q = (s+t)/2\).
+\item Verify \(pq = N\). If true, the factorization is found. Then compute \(d\) from \(e d \equiv 1 \pmod{\mathrm{lcm}(p-1,q-1)}\).
+\end{enumerate}
+Because the number of convergents is \(O(\log N)\), this test runs in polynomial time.
+
+
+\subsection*{ Example: \(N = 64741,\; e = 42667\)}
+
+We illustrate the attack step by step.
+
+\subsection*{Step 1: Compute continued fraction expansion of \(e/N\)}
+\(x = 42667 / 64741 \approx 0.65885\).
+\begin{align*}
+a_0 &= 0,\; x_1 = 1/0.65885 \approx 1.5178,\\
+a_1 &= 1,\; x_2 = 1/0.5178 \approx 1.9310,\\
+a_2 &= 1,\; x_3 = 1/0.9310 \approx 1.0741,\\
+a_3 &= 1,\; x_4 = 1/0.0741 \approx 13.495,\\
+a_4 &= 13,\; x_5 = 1/0.495 \approx 2.0202,\\
+a_5 &= 2,\; x_6 = 1/0.0202 \approx 49.5,\\
+a_6 &= 49,\; x_7 = 1/0.5 = 2,\\
+a_7 &= 2,\; \text{stop (remainder 0)}.
+\end{align*}
+Thus the expansion is \(\langle 0;1,1,1,13,2,49,2\rangle\).
+
+\subsection*{Step 2: Compute convergents using the recurrence}
+
+\begin{table}[htbp]
+\centering
+\label{tab:convergents}
+\begin{tabular}{c|ccc}
+\toprule
+$i$ & $a_i$ & $p_i$ & $q_i$ \\
+\midrule
+0 & 0 & 0   & 1   \\
+1 & 1 & 1   & 1   \\
+2 & 1 & 1   & 2   \\
+3 & 1 & 2   & 3   \\
+4 & 13& 27  & 41  \\
+5 & 2 & 56  & 85  \\
+6 & 49& 2771& 4206\\
+7 & 2 & 5598& 8497\\
+\bottomrule
+\end{tabular}
+\end{table}
+Convergents:
+\(C_0 = 0/1,\; C_1 = 1/1,\; C_2 = 1/2,\; C_3 = 2/3,\; C_4 = 27/41,\; C_5 = 56/85,\; C_6 = 2771/4206,\; C_7 = 5598/8497\).
+
+\subsection*{Step 3: Test each convergent as candidate \(k/(dg)\)}
+Because \(N^{1/4} \approx 64741^{0.25} \approx 16\), we expect \(d < 16\). Thus candidate denominators \(dg\) should be small. Testing small convergents:
+
+\noindent\textbf{Test \(C_2 = 1/2\):} \(k'=1,\; w=2\).  
+\(R = e w -1 = 42667\cdot2 -1 = 85333\). Divisible by 1, yes. \(T = 85333\).  
+\(s = N - T +1 = 64741 - 85333 +1 = -20591\) (impossible). Discard.
+
+\noindent\textbf{Test \(C_3 = 2/3\):} \(k'=2,\; w=3\).  
+\(R = 42667\cdot3 -1 = 128000\). Divisible by 2? Yes, \(128000/2 = 64000\). So \(T = 64000\).  
+\(s = N - T + 1 = 64741 - 64000 + 1 = 742\).  
+\(\Delta = s^2 - 4N = 742^2 - 4\cdot64741 = 550564 - 258964 = 291600\).  
+\(\sqrt{291600} = 540\) (since \(540^2 = 291600\)).  
+Then \(p = (742-540)/2 = 101,\; q = (742+540)/2 = 641\). Check product: \(101 \cdot 641 = 64741\). Success!
+
+\subsection*{Step 4: Recover \(d\)}
+We have \(p=101,\; q=641\). Compute \(L = \mathrm{lcm}(100,640)\).  
+\(100 = 2^2\cdot5^2,\; 640 = 2^7\cdot5\), so \(L = 2^7\cdot5^2 = 3200\).  
+We need \(d\) such that \(e d \equiv 1 \pmod{3200}\). Reduce \(e\) modulo \(3200\):
+\(42667 \div 3200 = 13\) remainder \(42667 - 13\cdot3200 = 42667 - 41600 = 1067\).  
+Solve \(1067 d \equiv 1 \pmod{3200}\). Note that \(1067\cdot3 = 3201 \equiv 1 \pmod{3200}\). Hence \(d = 3\).
+
+Thus Wiener's attack successfully recovers \(d = 3\), which is indeed far smaller than \(N^{1/4} \approx 16\).
+
+
+\subsection{How to Avoid Wiener’s Attack}
+The most direct way to defeat Wiener’s attack is to ensure that the private exponent \(d\) is not too small. Concretely, choosing \(d\) larger than approximately \(N^{1/4}\) makes the approximation error condition fail, so the continued fraction approach no longer recovers \(d\). In practice, RSA implementations always use full-length \(d\)-- that is, \(d\) of the same size as the modulus \(N\)-- which trivially satisfies \(d > N^{1/4}\). Alternatively, one may keep a short \(d\) but employ a very large public exponent \(e\) (e.g., \(e > N^{1.5}\)), because the attack relies on the fraction \(e/N\) being a close underestimate of \(k/(dg)\). However, the most common and recommended countermeasure is to use the Chinese Remainder Theorem (CRT) for decryption: the private key consists of \(p\), \(q\), and the reduced exponents \(d_p = d \bmod (p-1)\) and \(d_q = d \bmod (q-1)\). Even if \(d\) itself is chosen full size, the CRT speeds up decryption without exposing a small \(d\). Therefore, avoiding small secret exponents is simple and universally adopted.
+\subsection{ Generalized Wiener Attacks and the Family of Wiener Attacks}
+
+Wiener’s attack was the first to exploit continued fractions for small RSA secret exponents, but it only recovers \(d\) when \(d < N^{0.25}\). Later works extended this idea using more powerful tools, notably lattice reduction (the LLL algorithm). The most famous generalization is the \textbf{Boneh–Durfee attack} (1999), which rewrites the RSA key equation as a bivariate polynomial and applies Coppersmith’s method; it succeeds when \(d < N^{0.292}\). Around the same time, \textbf{Verheul and van Tilborg} (1997) proposed a variant that exhaustively searches for the most significant bits of \(p+q\), extending Wiener’s bound at the cost of exponential time. In 2004, \textbf{Bl\"omer and May} improved upon both Wiener and Boneh‑Durfee by constructing smaller, more efficient lattices, achieving a bound similar to \(d < N^{0.29}\) while simplifying the attack. Subsequent improvements pushed the theoretical limit further: \textbf{Herrmann and May} (2009) refined the lattice construction to reach the same bound \(d < N^{0.292}\) with a more straightforward proof, and \textbf{Kunihiro, Shinohara, and Izu} (2009) relaxed the conditions on the public exponent, showing that the attack works even when \(e\) is not close to \(N\). More generally, the family of “Wiener‑like” attacks includes any method that uses rational approximation (continued fractions) or lattice‑based small‑inverse techniques to recover secret exponents that are unusually small. These attacks incorporate Coppersmith’s theorem for finding small roots of modular equations, leading to bounds of the form \(d < N^{\beta}\) where \(\beta\) depends on the size of \(e\) and the number of known bits. In the extreme case where the public exponent \(e\) is very large (e.g., \(e \approx N\)), the feasible bound for \(d\) can even reach \(N^{0.5}\). 
+
+
+
+\subsection{Wiener Attack Implementation}
+The following Python code is a basic implementation of Wiener's attack on RSA using continued fractions.
+
+\begin{lstlisting}[style=pythonstyle, title=Wiener attack implementation, label=lst:wiener]
+import math
+
+def get_cf(num, den):
+    cf = []
+    while den != 0:
+        q = num // den
+        cf.append(q)
+        num, den = den, num - q * den
+    return cf
+
+def gen_convs(cf):
+    p0, p1 = 0, 1
+    q0, q1 = 1, 0
+    for a in cf:
+        p = a * p1 + p0
+        q = a * q1 + q0
+        yield p, q
+        p0, p1 = p1, p
+        q0, q1 = q1, q
+
+def wiener_attack(N, e):
+    cf = get_cf(e, N)
+    for k, d in gen_convs(cf):
+        if k == 0:
+            continue
+        if (e * d - 1) % k != 0:
+            continue
+        phi = (e * d - 1) // k
+        s = N - phi + 1
+        disc = s * s - 4 * N
+        if disc < 0:
+            continue
+        t = int(math.isqrt(disc))
+        if t * t != disc:
+            continue
+        p = (s - t) // 2
+        q = (s + t) // 2
+        if p * q == N:
+            return d, p, q
+    return None
+
+# Example usage
+if __name__ == "__main__":
+    N = 8927
+    e = 2621
+    res = wiener_attack(N, e)
+    if res:
+        d, p, q = res
+        print(f"d = {d}, p = {p}, q = {q}")
+    else:
+        print("Attack failed")
+\end{lstlisting}
+\vspace{2 em}
+The Python code produces the following output:
+
+
+\begin{tcolorbox}[colback=gray!10, colframe=gray!40, arc=2mm, boxrule=0.5pt]
+\ttfamily
+d = 5, p = 113, q = 79
+\end{tcolorbox}
+
+\section{Low Public Exponent attacks}
+
+When a small public exponent such as \(e = 3\) is used, RSA becomes vulnerable to a broadcast attack if the same message is sent to multiple recipients. This attack, due to Hastad, exploits the fact that the Chinese Remainder Theorem (CRT) can reconstruct the message once enough ciphertexts are collected.
+
+\subsection{Hastad's Broadcast Attack}
+
+Suppose a sender wants to send the same message \(M\) to \(k\) different parties \(P_1, P_2, \dots, P_k\). Each party has its own RSA public key \((N_i, e_i)\). For simplicity, assume all public exponents are equal to a small value \(e\) (e.g., \(e = 3\)), and that \(M\) is smaller than every modulus \(N_i\). The sender encrypts \(M\) with each public key and sends ciphertext \(C_i = M^{e} \bmod N_i\) to party \(P_i\).
+
+An eavesdropping attacker collects the \(k\) ciphertexts \(C_1, C_2, \dots, C_k\). The moduli \(N_i\) are always coprime (otherwise the attacker could factor them). Hence, the attacker can apply the Chinese Remainder Theorem to find an integer \(C_0\) such that:
+
+\[
+C_0 \equiv C_i \pmod{N_i} \quad \text{for all } i = 1, \dots, k.
+\]
+
+Because each \(C_i = M^e \bmod N_i\), we have \(C_0 \equiv M^e \pmod{N_i}\) for every \(i\). Hence \(C_0 \equiv M^e \pmod{N_1 N_2 \cdots N_k}\). Since \(M < N_i\) for all \(i\), it follows that \(M^e < N_1 N_2 \cdots N_k\). Therefore the congruence holds as an equality over the integers:
+
+\[
+C_0 = M^e.
+\]
+
+The attacker can then recover \(M\) by computing the integer \(e\)-th root of \(C_0\). This works as soon as the number of ciphertexts \(k\) is at least \(e\). For \(e = 3\), three ciphertexts suffice. The attack is practical precisely because \(e\) is small.
+
+\subsection{Hastad's Stronger Result (Coppersmith’s method)}
+
+A naive defense against the simple broadcast attack is to pad the message differently for each recipient. For example, instead of sending the same \(M\), the sender could send \(M_i = i \cdot 2^m + M\) to party \(P_i\) (linear padding). One might think that because the encrypted values are now different, the attack fails.
+
+Hastad proved that this is not enough. In fact, he showed that \textbf{any fixed polynomial padding} applied to the message before encryption does \textbf{not} prevent the attack. More precisely, suppose the sender sends to party \(P_i\) the encryption of \(f_i(M)\), where \(f_i\) is a publicly known polynomial (e.g., a linear function). As long as the number of recipients is at least the degree of the polynomial (or satisfies a certain bound), an attacker can still recover \(M\) by constructing a polynomial that has \(M\) as a root and then using Coppersmith's method to solve for \(M\).
+
+The attack works because the attacker knows the exact form of the padding. He can combine the \(k\) ciphertexts into a system of congruences and then use algebraic techniques (root finding over integers) to recover the original message. Hastad's broadcast attack remains a serious concern whenever a small public exponent is used, even if the message is padded with different fixed values for each recipient.
+
+We note that to properly defend against the broadcast attack above, one must use a \textbf{randomized pad} rather than a fixed one, as discussed earlier in the context of encryption padding (OAEP) and signature padding (PSS).
+
+
+\subsection{Franklin--Reiter Related Message Attack}
+
+When the same RSA public key encrypts two messages that are related by a known linear function, and the public exponent \(e\) is small, an attacker can recover both messages using polynomial arithmetic. This attack, due to Franklin and Reiter, exploits the algebraic structure of textbook RSA and the fact that the encryption map is a permutation.
+
+\subsubsubsection*{Franklin--Reiter Theorem.}
+Let \(\langle N, e \rangle\) be an RSA public key with \(N = pq\) (product of two distinct odd primes) and \(\gcd(e, \phi(N)) = 1\). Suppose \(M_1, M_2 \in \mathbb{Z}_N\) are two distinct messages satisfying
+\[
+M_1 = a M_2 + b \pmod N
+\]
+for known constants \(a \in \mathbb{Z}_N^*\) and \(b \in \mathbb{Z}_N\) with \(b \neq 0\). Given the ciphertexts
+\[
+C_1 = M_1^e \bmod N,\qquad C_2 = M_2^e \bmod N,
+\]
+one can recover \(M_1\) and \(M_2\) in time polynomial in \(\log N\) and \(e\).
+
+\textbf{Proof.}
+Because \(\gcd(e, p-1) = 1\) for each prime divisor \(p\) of \(N\) (since \(\gcd(e, \phi(N)) = 1\) and \(\phi(N) = (p-1)(q-1)\)), the map \(x \mapsto x^e\) is a permutation of \(\mathbb{Z}_p\). Indeed, for the multiplicative group \(\mathbb{Z}_p^*\) of order \(p-1\), consider the homomorphism \(\varphi(x) = x^e\). Its kernel consists of elements satisfying \(x^e = 1\). By Lagrange's theorem, the order of any such \(x\) divides both \(p-1\) and \(e\); hence it divides \(\gcd(e, p-1) = 1\). Thus the kernel is trivial, \(\varphi\) is injective, and on a finite set injectivity implies bijectivity. The same holds for the other prime factor \(q\). By the Chinese Remainder Theorem, \(x \mapsto x^e\) is a permutation of \(\mathbb{Z}_N\). Consequently, for any ciphertext \(C\) there is exactly one plaintext \(M\) with \(M^e \equiv C \pmod N\); equivalently, the polynomial \(x^e - C\) has exactly one linear factor \(x - M\) modulo \(N\).
+
+Now define two polynomials over \(\mathbb{Z}_N[x]\):
+\[
+g_1(x) = (a x + b)^e - C_1,\qquad g_2(x) = x^e - C_2.
+\]
+By the relation between the messages,
+\[
+g_1(M_2) \equiv (a M_2 + b)^e - C_1 = M_1^e - C_1 \equiv 0 \pmod N,
+\]
+and trivially \(g_2(M_2) \equiv M_2^e - C_2 \equiv 0\). Hence \(x - M_2\) divides both \(g_1(x)\) and \(g_2(x)\) in \(\mathbb{Z}_N[x]\).
+
+Because the equation \(x^e = C_2\) has the unique solution \(x = M_2\), the polynomial \(g_2(x)\) factors as
+\[
+g_2(x) = (x - M_2) \cdot q(x),
+\]
+where \(q(x)\) has no linear factor (otherwise a second distinct root would exist, contradicting uniqueness). The polynomial \(g_1(x)\) shares the factor \(x - M_2\) but is not a multiple of \(g_2(x)\) (that would imply \(M_1 = M_2\), which is false since \(b \neq 0\)). Therefore the greatest common divisor of \(g_1(x)\) and \(g_2(x)\) is exactly \(x - M_2\) (up to multiplication by a unit in \(\mathbb{Z}_N\)). Computing this gcd using the Euclidean algorithm for polynomials yields the linear factor, from which \(M_2\) is read directly. Then \(M_1 = a M_2 + b \bmod N\) is recovered.
+\subsubsubsection*{Example}
+
+Take \(p = 47\), \(q = 59\); then \(N = 2773\). Choose \(e = 3\) and the linear relation \(M_1 = 2M_2 + 5\) with \(M_2 = 1000\). Then \(M_1 = 2005\). Compute the ciphertexts:
+\[
+C_1 = 2005^3 \bmod 2773 = 2356,\qquad C_2 = 1000^3 \bmod 2773 = 740.
+\]
+The attacker constructs
+\[
+g_1(x) = (2x + 5)^3 - 2356,\qquad g_2(x) = x^3 - 740
+\]
+over \(\mathbb{Z}_{2773}[x]\). The Euclidean algorithm gives \(\gcd(g_1, g_2) = x - 1000\), revealing \(M_2 = 1000\) and then \(M_1 = 2 \cdot 1000 + 5 = 2005\).
+
+
+The attack requires computing the greatest common divisor of two polynomials of degree \(e\). Using the Euclidean algorithm, this takes \(O(e^2 \log N)\) operations. For small \(e\) (e.g., \(e = 3\) or even \(e = 65537\)), this is entirely practical. However, if \(e\) is very large (comparable to \(N\)), the polynomial gcd becomes infeasible. Moreover, the attack critically depends on the linear relation being exactly known and on the absence of padding. If the plaintexts are not related by a low‑degree polynomial, or if a randomized padding scheme is used, the attack fails.
+
+\subsection*{Countermeasures.}
+To prevent the Franklin–Reiter attack, one must never encrypt two related messages using textbook RSA with the same small public exponent. Proper RSA encryption mandates a randomized padding scheme such as OAEP (Optimal Asymmetric Encryption Padding). OAEP destroys any algebraic relation between plaintexts because the padded message is a pseudorandom function of the original plaintext and a fresh random seed. Consequently, even if the underlying messages are linearly related, the padded values are not, and the attack no longer applies. The same principle holds for RSA signatures, where randomized padding like PSS is essential.
+\subsection{Partial Key Exposure Attack}
+
+Suppose an attacker  is able to obtain only a fraction of the bits of the RSA private exponent \(d\) – for example, through a side‑channel attack. The question is whether this partial information suffices to reconstruct the entire private key. When the public exponent \(e\) is small (specifically \(e<\sqrt{N}\)), it turns out that knowing just \textbf{one quarter} of the bits of \(d\) (the least significant bits) allows the attacker to recover the full \(d\) in polynomial time. This is the partial key exposure attack of Boneh, Durfee, and Frankel. Moreover, when \(e\) is extremely small (e.g., \(e=3\)), the RSA equation directly \textbf{leaks half of the most significant bits} of \(d\) without any side‑channel – a fact we explain at the end of the section.
+
+\textbf{theorem: (Coppersmith, 1996)}
+Let \(N=pq\) be an \(n\)-bit RSA modulus (so \(p\) and \(q\) have about \(n/2\) bits). If one knows either the \(n/4\) least significant bits of \(p\) or the \(n/4\) most significant bits of \(p\), then one can factor \(N\) in time polynomial in \(n\).
+
+
+\noindent\textit{Remark.} Since \(p\) has \(n/2\) bits, \(n/4\) bits of \(N\) correspond to exactly one half of the bits of \(p\). Coppersmith's proof uses lattice reduction (LLL) to find the unknown half.
+
+\textbf{theorem: (Boneh, Durfee, Frankel, 1998 – LSB version)}
+Let \(\langle N,d\rangle\) be an RSA private key with \(N\) an \(n\)-bit modulus and let the public exponent \(e\) satisfy \(e<\sqrt{N}\). Given the \(n/4\) least significant bits of \(d\), the attacker can reconstruct all of \(d\) in time \(O(e\log e)\) times a polynomial in \(n\).
+
+
+\begin{proof}
+From the RSA key equation there exists an integer \(k\) with \(1\le k\le e\) such that
+\[
+ed = 1 + k\,\varphi(N),\qquad \varphi(N)=N-p-q+1. \tag{1}
+\]
+Substituting \(q=N/p\) and multiplying by \(p\) gives
+\[
+ed\,p = p + k\bigl(Np-p^2-N+p\bigr). 
+\]
+Let \(M = 2^{n/4}\). the attacker knows \(d\bmod M\), hence he knows \(ed\bmod M\). Reduce (2) modulo \(M\):
+\[
+(ed)p \equiv p + k(Np-p^2-N+p) \pmod{M}.
+\]
+Simplifying the right‑hand side:
+\[
+p + kNp - kp^2 - kN + kp = -kp^2 + (1+kN+k)p - kN.
+\]
+Thus we obtain the quadratic congruence in the unknown prime \(p\):
+\[
+kp^2 - \bigl((ed)-(1+kN+k)\bigr)p + kN \equiv 0 \pmod{M}. 
+\]
+For each possible \(k=1,2,\dots,e\), he solves
+the quadratic equation in p and obtains a number of candidate values for \(p \pmod M\).
+
+For each candidate \(p\), the attacker invokes Coppersmith's theorem: because he now knows the low half of \(p\), the theorem factors \(N\) in polynomial time. At least one candidate (the one coming from the true \(k\)) will succeed. Therefore after some attempts he obtains the factorization \((p,q)\). He then computes \(\varphi(N)=(p-1)(q-1)\) and recovers \(d = e^{-1}\bmod\varphi(N)\). The total running time is \(O(e\log e)\cdot\operatorname{poly}(n)\).
+\end{proof}
+
+
+For very small \(e\) (e.g., \(e=3\)), the RSA equation directly reveals half the most significant bits of \(d\) without any side‑channel. From (1) we have:
+
+\[
+ed = 1 + k(N-p-q+1) = kN + 1 - k(p+q-1).
+\]
+Hence
+\[
+d = \frac{kN+1}{e} - \frac{k(p+q-1)}{e}.
+\]
+Define \(\hat{d} = \left\lfloor \frac{kN+1}{e} \right\rfloor\). Because \(k(p+q-1) < 2k\sqrt{N}\) and \(k\le e\), then 
+
+\[
+|\hat{d} - d| \le \frac{k(p+q)}{e} \le \frac{3k\sqrt{N}}{e} < 3\sqrt{N}.
+\]
+Therefore, \(\hat{d}\) serves as a close approximation to \(d\). The derived bound implies that for the majority of private exponents \(d\), the most significant half of the bits of \(\hat{d}\) coincide with those of \(d\). Because only \(e\) distinct values of \(k\) are possible, Marvin can form a small set of size at most \(e\) that contains one element equal to the most significant half of the bits of \(d\). The case \(e = 3\) is particularly noteworthy: one can prove that \(k = 2\) always holds, and consequently the RSA system fully reveals half of the most significant bits of the private exponent \(d\).
+
+\section{Homomorphic Attacks}
+The ``textbook'' version of RSA -- where encryption and decryption are applied directly to integers representing messages -- suffers from a fundamental algebraic weakness: \textbf{multiplicative homomorphism}.
+
+\subsection*{ Multiplicative Homomorphism}
+
+\begin{definition}
+For a cryptosystem with encryption function \(E\) and decryption function \(D\), we say it is multiplicatively homomorphic if for all messages \(m_1, m_2\) in the message space
+\[
+D\bigl( E(m_1) \cdot E(m_2) \bigr) = m_1 \cdot m_2 \qquad (\text{or } \equiv m_1 m_2 \pmod{N}).
+\]
+\end{definition}
+
+ We have \(E(m) = m^e \bmod N\) and \(D(c) = c^d \bmod N\). Hence
+\[
+D\bigl( E(m_1) \cdot E(m_2) \bigr) = (m_1^e m_2^e)^d = (m_1 m_2)^{ed} = m_1 m_2 \pmod{N}.
+\]
+
+The same property holds for signatures: \(S(m) = m^d \bmod N\) satisfies
+\[
+S(m_1) \cdot S(m_2) \equiv S(m_1 m_2) \pmod{N}.
+\]
+
+\subsection{Common Modulus Attacks on RSA}
+This property allows an attacker to combine ciphertexts (or signatures) without knowing the private key.
+
+\subsubsection*{A) Simmons’ Attack}
+
+In RSA, for a user with modulus \(N = pq\) and a private exponent \(d\) satisfying \(ed \equiv 1 \pmod{\varphi(N)}\), there exists an integer \(k \ge 1\) such that  
+
+\[
+ed - 1 = k \cdot \varphi(N). 
+\]
+
+Thus \(m = ed - 1\) is a \textbf{known multiple} of \(\varphi(N)\). For any integer \(a\) coprime to \(N\), Euler’s theorem gives \(a^{\varphi(N)} \equiv 1 \pmod{N}\), and raising to the power \(k\) yields  
+
+\[
+a^{m} \equiv 1 \pmod{N}. 
+\]
+
+Now, \(m\) is even because \(\varphi(N)\) is even for odd primes \(p,q\). Write \(m = 2^s \cdot t\) with \(t\) odd. Define the sequence  
+
+\[
+x_0 = a^{t} \bmod N,\quad x_{i+1} = x_i^{2} \bmod N\;\; (i \ge 0).
+\]
+
+Since \(a^{m} = a^{2^{s}t} \equiv 1 \pmod{N}\), we have \(x_s \equiv 1\). Let \(i\) be the smallest index such that \(x_{i+1} \equiv 1 \pmod{N}\). Then \(x_i^{2} \equiv 1\) but \(x_i \not\equiv 1\). If also \(x_i \not\equiv -1\), then \(x_i\) is a nontrivial square root of 1 modulo \(N\):  
+
+\[
+(x_i - 1)(x_i + 1) \equiv 0 \pmod{N},
+\]
+
+and neither factor is divisible by \(N\). Hence \(\gcd(x_i - 1, N)\) is a proper divisor (either \(p\) or \(q\)). If we encounter \(x_i \equiv -1\), we simply pick another random \(a\) and repeat. The probability of success per trial is at least \(1/2\). Once a factor is found, RSA is broken.
+
+\subsubsection*{Algorithm}
+\begin{enumerate}
+\item Compute \(s = v_2(m)\), \(t = m / 2^s\).
+\item Choose random \(a \in [2, N-1]\). If \(\gcd(a,N) \neq 1\), return it.
+\item Compute \(x_0 = a^t \bmod N\).
+\item For \(i = 0\) to \(s-1\):
+   \begin{itemize}
+   \item \(x_{i+1} = x_i^2 \bmod N\).
+   \item If \(x_{i+1} \equiv 1\) and \(x_i \not\equiv \pm 1\), return \(\gcd(x_i-1, N)\).
+   \end{itemize}
+\item Otherwise go to step 2.
+\end{enumerate}
+
+\subsubsection*{Example}
+Let \(p=11, q=17\), so \(N=187\). Choose \(e=7\); then \(d=23\) because \(7\cdot23 = 161 = 1 + 1\cdot160\) . We have also \(m = ed-1 = 160\). Write \(160 = 2^5 \cdot 5\) (\(s=5, t=5\)). Pick \(a=2\) (coprime to 187). Compute:
+
+\begin{align*}
+x_0 &= 2^5 = 32 \mod 187,\\
+x_1 &= 32^2 = 1024 \equiv 89,\\
+x_2 &= 89^2 = 7921 \equiv 67,\\
+x_3 &= 67^2 = 4489 \equiv 1.
+\end{align*}
+
+Here \(i=2\) because \(x_3=1\). \(x_2 = 67 \not\equiv \pm 1\). Then \(\gcd(67-1,187) = \gcd(66,187) = 11\).
+
+\subsubsection*{Implementation of the attack}
+
+\begin{lstlisting}[style=pythonstyle,label=lst:simmons]
+import math
+import random
+
+def factorize_from_multiple(N, m):
+
+    s = 0
+    t = m
+    while t % 2 == 0:
+        t //= 2
+        s += 1
+
+    # Try random bases a
+    for _ in range(20):  # enough attempts for high probability
+        a = random.randrange(2, N)
+        g = math.gcd(a, N)
+        if g != 1:
+            # a shares a factor with N  we already have a factor
+            return g
+
+        x = pow(a, t, N)
+
+        if x == 1 or x == N-1:
+            continue
+
+        for _ in range(s):
+            prev = x
+            x = pow(x, 2, N)
+            if x == 1:
+                if prev != N-1:
+                    return math.gcd(prev - 1, N)
+                break
+            if x == N-1:
+                break
+
+    raise ValueError("Failed to factor N; check that m is a multiple of phi(N)")
+
+if __name__ == "__main__":
+    N = 187
+    m = 160   # = e*d - 1 (with e=7, d=23)
+    factor = factorize_from_multiple(N, m)
+    print(f"The first factor p = {factor}")
+    print(f"The second factor q = {N // factor}")
+\end{lstlisting}
+
+\begin{tcolorbox}[colback=gray!10, colframe=gray!40, arc=2mm, boxrule=0.5pt]
+\ttfamily
+The first factor p = 11 \\
+The second factor q = 17
+\end{tcolorbox}
+\vspace{1em}
+
+
+\subsubsection*{B) Recovering a Message from Two Ciphertexts }
+
+The same plaintext \(m\) (with \(0 < m < N\)) is encrypted for two different users with public exponents \(e_1, e_2\) (both coprime to \(\phi(N)\)). The ciphertexts are  
+
+\[
+c_1 = m^{e_1} \bmod N, \qquad c_2 = m^{e_2} \bmod N.
+\]
+
+The attacker captures \(c_1\) and \(c_2\). If \(\gcd(e_1, e_2) = 1\), he can recover \(m\) without factoring \(N\).\\
+Because \(\gcd(e_1, e_2) = 1\), there exist integers \(a, b\) (computed via the extended Euclidean algorithm) such that  
+
+\[
+a e_1 + b e_2 = 1.
+\]
+
+Now compute  
+
+\[
+c_1^a \cdot c_2^b \equiv (m^{e_1})^a \cdot (m^{e_2})^b = m^{a e_1 + b e_2} = m^1 = m \pmod{N}.
+\]
+
+If \(a\) or \(b\) is negative, we need to work with modular inverses. For instance, if \(a < 0\), we compute the modular inverse of \(c_1\) modulo \(N\) (which exists because \(\gcd(c_1, N) = 1\), otherwise \(N\) would be factored). The result is still \(m\).
+\vspace{2em}
+\subsubsection*{Conclusion}
+
+The common modulus attacks demonstrate that sharing the same RSA modulus among multiple users is catastrophic: any user can factor the modulus using their own key pair, thereby recovering all other private keys, and even without any private key, two ciphertexts of the same message under coprime exponents directly leak the plaintext. Hence, RSA moduli must never be reused.
+
+\subsection{Chosen cipher text}
+
+Among the most devastating consequences of RSA's multiplicative homomorphism is its vulnerability to \textbf{chosen ciphertext attacks}. In such an attack, the adversary has temporary access to a decryption oracle – a device that decrypts arbitrary ciphertexts (except the target) and returns the corresponding plaintext. The attacker's goal is to decrypt a specific target ciphertext \(c = m^e \bmod N\) without knowing the private key \(d\).
+
+The attack proceeds as follows:
+
+\begin{enumerate}
+\item \textbf{Target:} The attacker intercepts a ciphertext \(c = m^e \bmod N\) intended for the victim.
+\item \textbf{Blinding:} The attacker chooses a random integer \(r\) with \(\gcd(r,N)=1\) and computes a modified ciphertext
+\[
+c' = c \cdot r^e \bmod N.
+\]
+Note that \(c' \neq c\) (unless \(r=1\)), so the decryption oracle may accept it.
+\item \textbf{Oracle query:} The attacker submits \(c'\) to the decryption oracle. The oracle returns
+\[
+m' = D(c') = (m^e \cdot r^e)^d = m^{ed} \cdot r^{ed} = m \cdot r \pmod{N}.
+\]
+\item \textbf{Recovery:} Because the attacker knows \(r\), they compute \(r^{-1} \bmod N\) and obtain
+\[
+m = m' \cdot r^{-1} \pmod{N}.
+\]
+\end{enumerate}
+
+The decryption oracle never sees the original ciphertext \(c\), only a blinded version, yet the homomorphic property allows the attacker to extract \(m\) directly. This demonstrates that textbook RSA is completely insecure in the presence of even a single decryption query.
+
+\subsection{Davida's Attack (Chosen-Message Universal Forgery)}
+
+Davida's attack exploits the multiplicative homomorphism of textbook RSA signatures to forge a valid signature for any target message after obtaining the signatures of two specially chosen messages. This is a \textbf{chosen-message attack} leading to \textbf{universal forgery}: the adversary can sign any message of their choice without knowing the private key.
+
+The attack proceeds as follows:
+
+\begin{enumerate}
+\item \textbf{Target:} The attacker wants a valid signature \(S(m) = m^d \bmod N\) for a chosen message \(m\) (with \(\gcd(m,N)=1\)).
+\item \textbf{Choose blinding factors:} The attacker selects a random integer \(r\) with \(\gcd(r,N)=1\) and constructs two messages:
+\[
+m_1 = m \cdot r \bmod N, \qquad m_2 = r^{-1} \bmod N.
+\]
+\item \textbf{Obtain signatures:} The attacker requests signatures from the legitimate signer for \(m_1\) and \(m_2\). The signer returns
+\[
+S_1 = m_1^d \bmod N, \qquad S_2 = m_2^d \bmod N.
+\]
+\item \textbf{Forge the target signature:} The attacker computes
+\[
+S = S_1 \cdot S_2 \bmod N.
+\]
+Then \(S\) is a valid signature for the original message \(m\).
+\end{enumerate}
+
+The attacker never needs to know the private key; only two legitimate signatures on chosen (but seemingly harmless) messages are required.
+
+
+\subsection{LSB Oracle Attack on RSA}
+
+The LSB (least significant bit) oracle attack on RSA exploits the fact that knowing just the parity (even or odd) of the decrypted plaintext allows an attacker to iteratively narrow down the plaintext value until it is fully recovered. This is a side‑channel attack that relies purely on parity leakage, distinct from padding oracle attacks.
+
+To understand the attack, first recall the meaning of the least significant bit. In binary representation, any integer's LSB is 0 if the number is even and 1 if it is odd. So an oracle that returns the LSB of a decrypted plaintext is simply telling us whether that plaintext is even or odd. On its own this seems trivial, but when combined with clever ciphertext manipulation it becomes a powerful tool.
+
+Consider standard RSA: the modulus \(N = p \cdot q\) is odd (both primes are odd), the public key is \((e, N)\), the private key is \(d\), and a ciphertext is \(c = m^e \bmod N\) where \(m\) is the plaintext. The attacker is assumed to have access to an oracle that, given any ciphertext, decrypts it and returns only the LSB of the resulting plaintext.
+
+The core idea is to multiply the ciphertext by \(2^e \bmod N\) and send the result to the oracle. Because of RSA's homomorphic property, decrypting \(c \cdot 2^e \bmod N\) yields
+
+\[
+m' = 2m \bmod N .
+\]
+
+The oracle then tells us whether \(m'\) is even or odd. Now, how does the parity of \(2m \bmod N\) reveal information about the original \(m\)? There are two cases:
+
+\begin{itemize}
+\item If \(m < N/2\), then \(2m\) is still less than \(N\) (since \(2m < N\)). Therefore \(2m \bmod N = 2m\), which is even. The oracle returns ``even''.
+\item If \(m \ge N/2\), then \(2m \ge N\). In this case \(2m \bmod N = 2m - N\). Since \(N\) is odd, subtracting an odd number from an even number (\(2m\) is even) gives an odd result. The oracle returns ``odd''.
+\end{itemize}
+
+Thus, the parity of \(2m \bmod N\) tells us exactly whether \(m\) lies in the lower half \([0, N/2)\) (even $\rightarrow$ lower half) or the upper half \([N/2, N)\) (odd $\rightarrow$ upper half). In other words, a single LSB query reveals the most significant bit (MSB) of the plaintext: the MSB is 0 for the lower half and 1 for the upper half.
+
+
+\subsubsection*{Algorithm}
+
+The attack proceeds iteratively. We maintain an interval \([L, R)\) that is guaranteed to contain the secret plaintext \(m\). Initially, \(L = 0\) and \(R = N\). Each step uses one oracle query to halve the interval.
+
+\begin{enumerate}
+\item \textbf{Set up the initial interval.} \\
+   Let \(L = 0\) and \(R = N\). \\
+   \emph{The plaintext satisfies \(0 \le m < N\).}
+
+\item \textbf{For \(k = 1, 2, 3, \dots\) until the interval contains only one integer:}
+
+   \begin{enumerate}
+   \item \textbf{Construct a manipulated ciphertext.} \\
+      Compute \(c_{\text{query}} = c \cdot (2^{k})^{\,e} \bmod N\). \\
+      \emph{This is equivalent to encrypting the value \(2^k m\) because} \\
+      \emph{\(c \cdot (2^k)^e \equiv m^e \cdot (2^k)^e \equiv (2^k m)^e \pmod{N}\).}
+
+   \item \textbf{Query the LSB oracle.} \\
+      Send \(c_{\text{query}}\) to the oracle. The oracle decrypts and returns the LSB of \(2^k m \bmod N\).
+
+   \item \textbf{Interpret the answer to halve the interval.} \\
+      \begin{itemize}
+      \item If the oracle returns \textbf{even}, then \(2^k m \bmod N\) is even. This implies that the current scaled plaintext lies in the lower half of the modulus. Consequently, the original \(m\) belongs to the left half of \([L, R)\). Update:
+         \[
+         R \leftarrow \frac{L+R}{2}.
+         \]
+      \item If the oracle returns \textbf{odd}, then \(2^k m \bmod N\) is odd. This implies that the current scaled plaintext lies in the upper half of the modulus. Hence, \(m\) belongs to the right half of \([L, R)\). Update:
+         \[
+         L \leftarrow \frac{L+R}{2}.
+         \]
+      \end{itemize}
+      \emph{The parity of \(2^k m \bmod N\) tells us whether \(2^{k-1}m \bmod N\) (or, after renormalisation, the previously scaled value) is less than \(N/2\) or not. This is exactly the binary search decision.}
+
+   \item \textbf{Check for termination.} \\
+      If \(R - L = 1\) (i.e., the interval contains exactly one integer), then that integer is \(m\). Stop.
+   \end{enumerate}
+
+\item \textbf{Output the recovered plaintext.} \\
+   The unique integer in the final interval is the secret \(m\).
+\end{enumerate}
+
+Mathematically, each query provides exactly one bit of information about \(m\). Because \(m\) lies in \([0,N)\) and can be represented with at most \(\lceil \log_2 N\rceil\) bits, the total number of queries required is \(O(\log N)\). Each query involves a modular exponentiation (to compute the manipulated ciphertext) and a call to the oracle. The attack is efficient and devastating.
+
+\subsubsection*{Example}
+ 
+let \(N = 101\) and the target plaintext be \(m = 73\). Start with \([0,101)\). Query with \(2m \bmod N\): the oracle returns odd, so \(m \in [51,101)\). Next query with \(4m \bmod N\): the oracle returns even, so \(m \in [51,76)\). Next query with \(8m \bmod N\): the oracle returns odd, so \(m \in [63,76)\). Continuing this process, the interval collapses to \(\{73\}\). No private key is ever needed; only the parity answers.
+
+\vspace{1em}
+The LSB oracle, despite leaking only a single parity bit, effectively reveals the entire plaintext because that bit can be reinterpreted as a decision about which half of the remaining interval contains \(m\).
+\vspace{2em}
+
+\subsection*{ Conclusion}
+These homomorphic attacks succeed because RSA’s multiplicative property allows ciphertext manipulation to leak plaintext information. Padding schemes like OAEP break this algebraic malleability by adding structured randomness before encryption, ensuring that any tampered ciphertext decrypts to an invalid format and is rejected before any bit is revealed. Thus, proper padding is the essential defense against such attacks. In the next section we will discus padding.  
+\section{Padding in RSA}
+
+Textbook RSA---the raw operation \( m \mapsto m^e \bmod N \)---is mathematically elegant but cryptographically brittle. In isolation, it suffers from deterministic encryption, malleability, small‑message exposure, and signature forgery. Padding resolves all these issues by wrapping the message (or its hash) in a structured, often randomized, full‑length envelope before the RSA operation.
+
+\subsection{Why Padding Is Necessary}
+
+Without padding, an attacker can exploit the following weaknesses:
+\begin{itemize}
+\item \textbf{Deterministic encryption}: Identical plaintexts produce identical ciphertexts, enabling traffic analysis and dictionary attacks.
+\item \textbf{Malleability}: Multiplying a ciphertext by \(2^e\) multiplies the plaintext by 2, which leads to adaptive chosen‑ciphertext attacks (e.g., the LSB oracle attack).
+\item \textbf{Small plaintext space}: If the plaintext is very small (e.g., a symmetric key), an attacker can compute an integer \(e\)-th root to recover it directly.
+\item \textbf{Signature existential forgery}: Lacking a fixed format, an adversary can combine valid signatures or produce a signature for an arbitrary message without the private key.
+\end{itemize}
+Padding defeats each of these attacks.
+
+\subsection{What is a Hash Function?}
+
+A \textbf{hash function} takes an input of arbitrary length (a message, file, or any data) and produces a fixed‑length output called a \textbf{hash value} or \textbf{digest}. It is designed to be \textbf{one‑way} (given the hash, it is infeasible to recover the original input) and \textbf{collision‑resistant} (it is hard to find two different inputs that produce the same hash). Hash functions are used in RSA signatures to reduce the message to a fixed size before signing.
+
+\noindent\textbf{Example}: SHA‑256 (Secure Hash Algorithm 256‑bit). The message \texttt{"Hello"} hashes to:
+\[
+\texttt{185f8db32271fe25f561a6fc938b2e264306ec304eda518007d1764826381969}
+\]
+(in hexadecimal). Changing even one character in the input produces a completely different, unpredictable hash.
+
+\subsection{How Padding Works: Common Principles}
+
+All padding schemes share three core functions:
+\begin{enumerate}
+\item \textbf{Expansion} – The input (message or hash) is extended to the full length of the RSA modulus (e.g., 2048 bits), eliminating any possibility of small‑integer attacks.
+\item \textbf{Randomization} – A random value is mixed into the padded block. For encryption this is called a \textbf{seed}; for signatures it is called a \textbf{salt}. Randomization ensures that even identical inputs yield different padded blocks.
+\item \textbf{Integrity marker} – A fixed, predictable byte pattern (e.g., \texttt{0x01} or a sequence of zero bytes) is embedded at a known location. After decryption, the receiver verifies this marker; if it is absent or corrupted, the ciphertext (or signature) is rejected.
+\end{enumerate}
+These three principles are instantiated differently for encryption and for signatures.
+
+\subsection{Padding for Encryption: OAEP}
+
+\textbf{Key term – seed}: A seed is a random bit string generated freshly for each encryption operation. It is used to mask the message so that the output appears uniformly random.
+
+\noindent\textbf{General operation}:
+\begin{itemize}
+\item The message is padded with a fixed marker (e.g., \texttt{0x00…001}).
+\item A random \textbf{seed} is generated.
+\item The seed is used to mask the message block (via a mask generation function).
+\item The message block is then used to mask the seed itself.
+\item The final padded block consists of the masked seed concatenated with the masked message.
+\end{itemize}
+
+\noindent\textbf{Decryption and verification}: After RSA decryption, the receiver reverses the masking using the same functions, extracts the message, and checks the integrity marker. If the marker is not exactly as expected, the ciphertext is rejected.
+
+\noindent\textbf{Why it is secure}:
+\begin{itemize}
+\item \textbf{Randomization} via the seed destroys determinism; the same message encrypts to different ciphertexts each time.
+\item \textbf{Integrity marker} detects any tampering; modified ciphertexts almost never produce a valid marker, so the receiver rejects them without leaking useful information.
+\item \textbf{Full‑length expansion} ensures that the plaintext is never small enough for an \(e\)-th root attack.
+\end{itemize}
+
+\subsection{Padding for Signatures}
+
+Two principal schemes exist: the legacy PKCS\#1 v1.5 and the modern PSS (Probabilistic Signature Scheme).
+
+\subsubsection{Legacy scheme: PKCS\#1 v1.5}
+
+\noindent\textbf{General operation}:
+\begin{itemize}
+\item Compute the cryptographic hash of the message (using a function like SHA‑256).
+\item Construct a fixed template: \texttt{0x00 0x01}, followed by a string of \texttt{0xFF} bytes, then a \texttt{0x00} separator, then an algorithm identifier and the hash itself.
+\item This template is the padded block. It contains no randomness.
+\end{itemize}
+
+\noindent\textbf{Verification}: The verifier recovers the padded block from the signature, checks the exact structure (\texttt{00 01 … FF … 00 …}), extracts the hash, and compares it with the hash of the received message.
+
+\noindent\textbf{Security limitation}: Because there is no salt, the scheme is deterministic and has known weaknesses. It is no longer recommended for new applications.
+
+\subsubsection{Modern scheme: PSS (Probabilistic Signature Scheme)}
+
+\textbf{Key term – salt}: A salt is a random value (typically of the same length as the hash output) generated freshly for each signature. It introduces unpredictability and prevents certain forgery attacks.
+
+\noindent\textbf{General operation}:
+\begin{itemize}
+\item Compute the hash of the message.
+\item Generate a random \textbf{salt}.
+\item Form a new string that concatenates a fixed prefix, the message hash, and the salt. Hash this string to obtain a second hash value.
+\item Construct a data block containing the salt and a fixed marker.
+\item Mask this data block using the second hash.
+\item The final padded block is the second hash, the masked data, and a fixed trailer byte.
+\end{itemize}
+
+\noindent\textbf{Verification}: The verifier recovers the second hash and the masked data, unmask to obtain the salt, recompute the second hash from the message hash and the salt, and confirm equality.
+
+\noindent\textbf{Why it is stronger}:
+\begin{itemize}
+\item \textbf{Salt} makes signatures probabilistic: signing the same message twice produces different output, defeating forgery strategies that rely on deterministic collisions.
+\item \textbf{Double hashing} provides domain separation and strengthens the security reduction.
+\item \textbf{Provable security}: PSS is proven existentially unforgeable under adaptive chosen‑message attacks (assuming the RSA problem is hard).
+\end{itemize}
+
+\subsection{How Padding Protects Against Core Vulnerabilities}
+
+\begin{itemize}
+\item \textbf{Deterministic encryption}: Seed (for encryption) or salt (for signatures) ensures that identical inputs yield distinct outputs. Attackers cannot build dictionaries or detect repetitions.
+\item \textbf{Malleability}: The integrity marker embedded in the padded block acts as a checksum. Any modification to the ciphertext corrupts this marker with overwhelming probability, causing the receiver to reject the message. The attacker learns nothing, and the attack chain is broken.
+\item \textbf{Small message exposure}: Padding expands the input to the full length of \(N\). The resulting integer is no longer small, making \(e\)-th root attacks impossible.
+\item \textbf{Signature forgery}: Rigid formatting (v1.5) or salt‑based double hashing (PSS) destroys the multiplicative homomorphism of raw RSA. Multiplying valid signatures does not produce a valid padded block, nor can an attacker compute a signature from an arbitrary integer.
+\end{itemize}
+
+\subsection{Conclusion}
+
+Padding is not an optional enhancement; it is a mandatory security layer that transforms fragile textbook RSA into a robust cryptographic primitive. For encryption, OAEP employs a random \textbf{seed} and an integrity marker to achieve chosen‑ciphertext security. For signatures, PSS uses a random \textbf{salt} and a two‑layer hash construction to provide existential unforgeability. In both cases, the fundamental principles are the same: expand the input, randomize it, and embed a verifiable pattern. These simple measures defeat every major practical attack on RSA.
+
+\section{Implementation Attacks}
+\subsection{Timing and Power Attacks on RSA}
+
+The standard method for RSA private‑key operation (decryption or signature generation) is the square‑and‑multiply algorithm, which processes the bits of the private exponent \(d\) from most significant to least significant. At each iteration, a squaring is always performed, followed by a multiplication by the base \(M\) only if the current exponent bit is \(1\). This conditional multiplication creates a direct dependency between the bits of \(d\) and both the execution time and the power consumption: a multiply step takes slightly longer and consumes a different amount of power than a squaring. In a \textbf{timing attack}, an adversary measures the total decryption time for many carefully chosen inputs \(M\) and uses statistical tests (e.g., correlation or t‑tests) to decide whether a particular bit of \(d\) is 0 or 1. Because the time difference between a square‑only and a square‑then‑multiply iteration is tiny but measurable, averaging over thousands of trials allows the attacker to reconstruct \(d\) bit by bit.
+
+refines this idea by monitoring the device’s instantaneous power consumption during a single exponentiation. In Simple Power Analysis (SPA), the attacker inspects one power trace and directly identifies the sequence of square and multiply operations, thereby reading the bits of \(d\) from the trace. Differential Power Analysis (DPA) is more powerful: it records many traces for different random inputs and uses statistical hypothesis testing (e.g., correlation with predicted intermediate values) to extract the secret bits even when the signal is noisy and when the algorithm uses countermeasures like dummy multiplications. The core reason power analysis works is that the power consumed by a CMOS chip (Complementary Metal‑Oxide‑Semiconductor, the technology used in most integrated circuits) depends on the Hamming weight (number of 1‑bits) of the data being processed; the intermediate values in square‑and‑multiply are functions of \(M\) and the already recovered bits of \(d\), so an attacker can predict those values and correlate them with actual power measurements.
+
+Consequently, both timing and power attacks demonstrate that the square‑and‑multiply algorithm, if implemented without side‑channel countermeasures, directly leaks the private exponent \(d\). The most effective protections are exponent blinding (randomizing \(d\) before each exponentiation by adding a random multiple of \(\varphi(N)\) and base blinding (multiplying the input \(M\) by a random factor). These measures break the statistical dependency between the measurements and the secret bits, making the attacks infeasible. Modern secure RSA libraries always include such countermeasures.
+
+
+
+\subsection{Fault-Based Attack on RSA-CRT}
+
+RSA with the Chinese Remainder Theorem (CRT) speeds up signing. Let us recall that in order  To sign a message \(x\) with secret exponent \(d\) and modulus \(N = p \cdot q\) (two large primes):
+
+\begin{enumerate}
+    \item Compute \(S_1 = x^d \bmod p\).
+    \item Compute \(S_2 = x^d \bmod q\).
+    \item Combine \(S_1\) and \(S_2\) via CRT to obtain the correct signature \(S = x^d \bmod N\).
+\end{enumerate}
+
+The attack exploits a hardware fault that occurs during the computation of \textbf{only one} of the two branches.
+ 
+An attacker asks the black‑box to sign a known message \(x\). Due to a random fault (e.g., a bit flip) during the computation of \(S_1\) modulo \(p\), the box outputs a faulty signature \(\hat{S}\). The computation modulo \(q\) remains correct. Consequently:
+
+\begin{itemize}
+    \item \(\hat{S} \equiv S \pmod{q}\) (they agree modulo \(q\)),
+    \item \(\hat{S} \not\equiv S \pmod{p}\) (they disagree modulo \(p\)).
+\end{itemize}
+
+The difference \(S - \hat{S}\) is divisible by \(q\) (because they are equal modulo \(q\)) but \textbf{not} divisible by \(p\). Therefore the greatest common divisor of \(S - \hat{S}\) and \(N\) must be exactly \(q\):
+
+\[
+\gcd(S - \hat{S},\, N) = q.
+\]
+
+Once \(q\) is known, \(p = N / q\) follows immediately. Factoring \(N\) completely breaks the RSA system – the private exponent \(d\) can be recomputed.
+
+\textbf{Lenstra's improvement (even simpler).}  
+The paper also cites a later improvement by Lenstra: the correct signature \(S\) is not needed. Using only the faulty signature \(\hat{S}\) and the known message \(x\):
+
+\begin{itemize}
+    \item Compute \(\hat{S}^e \bmod N\) where \(e\) is the public exponent.
+    \item Because of the fault, \(x \equiv \hat{S}^e \pmod{q}\) but \(x \not\equiv \hat{S}^e \pmod{p}\).
+    \item Hence \(\gcd(x - \hat{S}^e, N) = q\).
+\end{itemize}
+
+Thus a \textbf{single} interaction that yields one faulty signature is sufficient to factor the modulus and recover the entire private key.
+
+\subsubsection*{Countermeasures}
+
+To prevent fault attacks, implementations must detect errors before outputting the result. Common countermeasures include:
+
+\begin{itemize}
+    \item \textbf{Verification with the public exponent:} After computing \(S\), check that \(S^e \bmod N\) equals the original message \(M\). This detects any fault that altered the result, but it doubles the computation time.
+
+    \item \textbf{Redundant computation:} Compute the private operation twice (possibly using different algorithms) and compare outputs.
+
+    \item \textbf{Secure CRT recombination:} Include a check that the recombined result indeed is congruent to \(S_p\) modulo \(p\) and to \(S_q\) modulo \(q\). If not, abort.
+
+    \item \textbf{Randomisation (blinding):} Multiply the message by a random factor before exponentiation and correct afterwards. A fault will likely destroy the blinding relationship, causing the verification to fail.
+
+    \item \textbf{Error‑detecting codes:} Encode intermediate values with checksums that are verified at the end.
+\end{itemize}
+
+
+\subsection{Bleichenbacher's Chosen Ciphertext Attack on RSA}
+
+Bleichenbacher's attack (1998) is a landmark chosen ciphertext attack against RSA when used with the PKCS \#1 v1.5 padding scheme. It demonstrates that even a single bit of information from a decryption oracle—whether the padding is valid—can completely break the cryptosystem. This attack was successfully used against early SSL/TLS implementations, and it motivated the development of provably secure padding schemes such as OAEP.
+
+
+\subsubsection*{PKCS \#1 v1.5 Padding (Recall)}
+
+For the encryption to be secure, the plaintext must be structured. PKCS \#1 v1.5 defines a specific format for the encoded message before RSA encryption. For an \(n\) of \(k\) bytes (e.g., 128 bytes for 1024-bit RSA), the encoded block has the form:
+
+\[
+\text{0x00} \;\|\; \text{0x02} \;\|\; \text{PS} \;\|\; \text{0x00} \;\|\; \text{DATA}
+\]
+
+where:
+\begin{itemize}
+    \item \texttt{0x00} and \texttt{0x02} are fixed headers.
+    \item \texttt{PS} is a non‑zero random padding string of at least 8 bytes.
+    \item \texttt{0x00} separates the padding from the actual data.
+\end{itemize}
+
+When decrypting a ciphertext, the recipient checks whether the resulting plaintext starts with \texttt{0x00 0x02} and contains the expected separator. If the format is correct, the decryption proceeds; otherwise an error (often “invalid padding”) is returned.
+
+\paragraph{The Padding Oracle: }
+
+A \emph{padding oracle} is any system that, given a ciphertext \(c\), decrypts it and indicates whether the obtained plaintext has valid PKCS \#1 v1.5 formatting. The attacker does not need the actual plaintext—only the binary answer: “valid” or “invalid”. Such oracles can arise from explicit error messages, timing differences, or other side channels.
+
+\subsubsection*{The Million‑Message Narrowing Attack}
+
+Bleichenbacher's attack uses the oracle to gradually narrow down the set of possible plaintext values for a target ciphertext \(c\). The ultimate goal is to recover \(m = c^d \bmod n\).
+
+For any integer \(s\), consider the modified ciphertext:
+
+\[
+c' = c \cdot s^e \bmod n.
+\]
+
+Because of the homomorphic property of RSA, decrypting \(c'\) yields:
+
+\[
+m' = (c')^d \bmod n = (c^d \cdot (s^e)^d) \bmod n = m \cdot s \bmod n.
+\]
+
+The attacker chooses different values of \(s\) and asks the oracle whether the decryption of \(c'\) (i.e., \(m \cdot s \bmod n\)) has valid PKCS \#1 v1.5 padding. The answer reveals whether \(m \cdot s \bmod n\) lies in a certain interval of integers that have the correct leading bytes.
+
+To express this condition precisely, let \(B = 2^{8(k-2)}\) (for a modulus of \(k\) bytes). The condition for valid PKCS \#1 v1.5 padding can be expressed as:
+
+\[
+2B \le \text{plaintext} \le 3B - 1
+\]
+
+because the first two bytes are \texttt{0x00 0x02}, which corresponds to a numeric value between \(2B\) and \(3B-1\). More precisely, the valid plaintext lies in the interval
+
+\[
+[2B,\; 3B-1].
+\]
+
+For a given ciphertext \(c\), let \(M_0 = [2B,\; 3B-1]\) be the initial interval of possible plaintexts.
+
+With this mathematical formulation in place, the attack proceeds iteratively as follows:
+
+The attacker multiplies the target ciphertext by \(s_0^e\) for some random \(s_0\) and queries the oracle until a valid padding is found. This yields a first multiplier \(s_0\) and an interval \(M_0\).
+
+Once an interval \(M_{i-1} = [a, b]\) is known, the attacker searches for the smallest integer \(s_i > s_{i-1}\) such that the plaintext \(m \cdot s_i \bmod n\) falls into the valid padding interval. Because \(m \cdot s_i \bmod n\) is actually \(m \cdot s_i\) (if no wrap‑around) or \(m \cdot s_i - n\) (if it exceeds \(n\)), the condition becomes:
+
+\[
+2B \le m \cdot s_i - t n \le 3B-1 \quad \text{for some integer } t.
+\]
+
+This can be rearranged into constraints on \(m\):
+
+\[
+\frac{2B + t n}{s_i} \le m \le \frac{3B-1 + t n}{s_i}.
+\]
+
+Thus, from each \(s_i\) that yields a valid oracle response, the attacker computes a new interval for \(m\) and intersects it with the previous interval \(M_{i-1}\). The new interval is:
+
+\[
+M_i = M_{i-1} \cap \bigcup_{t} \left[ \frac{2B + t n}{s_i},\; \frac{3B-1 + t n}{s_i} \right].
+\]
+
+After each iteration, the interval length shrinks. Once \(M_i\) contains only one integer, that integer is the original plaintext \(m\).
+
+
+ The core lemma is that if the oracle returns “valid” for a ciphertext \(c' = c \cdot s^e \bmod n\), then \(m\) must lie in one of the intervals
+
+\[
+I_t = \left[ \frac{2B + t n}{s},\; \frac{3B-1 + t n}{s} \right]
+\]
+
+for some integer \(t\). The attacker does not know \(t\) but can compute all possible \(t\) for which \(I_t\) intersects the current \(M\). The intersection over all valid \(s\) eventually forces the interval to a unique integer.
+
+\subsubsection*{Complexity and Impact}
+
+Bleichenbacher showed that the attack typically requires about \(10^5\) to \(10^6\) oracle queries for a 1024‑bit RSA key. This was feasible even in the late 1990s. The attack was successfully applied to early SSL implementations, where a web server would reveal padding validity through different error messages or timing.
+
+Nearly two decades later, the vulnerability resurfaced in a new variant called the \textbf{ROBOT attack} (Return Of Bleichenbacher's Oracle Threat), discovered in 2018. The ROBOT attack demonstrated that many modern TLS implementations still contained Bleichenbacher-style padding oracles; researchers found that almost a third of the top 100 domains were affected. The attack returned because TLS servers inadvertently leaked padding validity through different error codes or timing, and because the complexity of the TLS standard often led to incomplete or flawed implementations of the recommended countermeasures. This revival highlights that even well-known, decades‑old vulnerabilities can remain exploitable if countermeasures are not implemented correctly.
+
+\subsubsection*{Countermeasures}
+
+As discussed earlier in the padding section the PKCS \#1 v1.5 padding is not provably secure. The RSA standard was updated to recommend OAEP (Optimal Asymmetric Encryption Padding), which uses a Feistel network with a hash function to randomise the message. OAEP is provably secure against chosen ciphertext attacks under the RSA assumption.
+
+If PKCS \#1 v1.5 must be used, the implementation must not leak any difference between valid and invalid padding. Specifically:
+\begin{itemize}
+    \item Return the same error message for all decryption failures.
+    \item Ensure the decryption time does not depend on padding validity (constant‑time code).
+    \item Avoid side channels such as cache behaviour or power consumption.
+\end{itemize}
+
+\subsubsection*{Conclusion}
+
+Bleichenbacher's attack is a paradigmatic example of how a seemingly harmless oracle—revealing only whether a ciphertext decrypts to a correctly padded message—can completely break RSA encryption. It forced a rethinking of padding schemes and influenced the design of modern cryptographic protocols that now use provably secure constructions like OAEP.
+
+\section{Lessons from a Quarter‑Century of RSA Attacks}
+
+The RSA cryptosystem has withstood decades of mathematical cryptanalysis; the core problem of factoring large integers remains intractable. Yet the attacks surveyed in this chapter demonstrate a sobering truth: \textbf{mathematical security is necessary but far from sufficient}. Real‑world implementations introduce a vast attack surface that can completely subvert the algorithm's algebraic strength.
+
+These attacks teach several enduring lessons:
+
+\begin{enumerate}
+    \item \textbf{Implementations must be defensive, not optimistic.}
+    Every computed result should be verified (e.g., by checking \(s^e \equiv m \pmod{n}\) before output). Redundant computation, error‑detecting codes, and blinding are not optional extras---they are essential.
+
+    \item \textbf{Side channels and oracles are the enemy.}
+    Even a single bit of information---valid/invalid padding, timing difference, power consumption---can be amplified into a full break. Constant‑time, uniform‑response code is mandatory.
+
+    \item \textbf{Hardware matters.}
+    Fault injection is a practical threat for any device an attacker can physically access. Countermeasures must span the entire stack, from the silicon (voltage/clock sensors) up to the application.
+
+    \item \textbf{Old attacks never die; they only return with new names.}
+    Bleichenbacher's attack lay dormant for 20 years before ROBOT proved that developers still fail to implement the simple countermeasures. The same is likely true for fault attacks: as IoT and embedded devices proliferate, voltage‑glitching will become a standard tool for extracting keys.
+\end{enumerate}
+
+So we see that the gap between ``textbook RSA'' and ``real RSA'' is wide and treacherous. Every engineer who deploys RSA must internalise these attacks; otherwise, the mathematics that protects their data is just a facade.

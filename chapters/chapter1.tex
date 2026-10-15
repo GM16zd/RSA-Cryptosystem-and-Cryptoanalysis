@@ -1,0 +1,44 @@
+\chapter{Historical Context and Motivation}
+
+\section{The Key Distribution Problem}
+
+For most of history, cryptography meant symmetric encryption: two parties sharing the same secret key. This works perfectly once the key is exchanged, but that exchange itself is a vulnerability. Before the 1970s the only options were physical delivery couriers, sealed envelopes, or face-to-face meetings. As computer networks grew, this became a hindrance.
+
+The U.S. National Security Agency maintained a global courier service throughout the Cold War. But as ARPANET \footnote{ARPANET was the first operational packet-switching network, created by the U.S. Department of Defense to connect research institutions and enable resource sharing, laying the foundation for the modern Internet} connected universities and research centers in the 1970s, physical key distribution became a serious bottleneck. A scalable solution was desperately needed.
+
+\section{Diffie and Hellman's Breakthrough (1976)}
+
+In 1976, Whitfield \textbf{Diffie} and Martin \textbf{Hellman} published ``New Directions in Cryptography,'' a paper that fundamentally re-imagined secure communication. They proposed the concept of \emph{\textbf{public-key cryptography}}: each user would have two keys, one public and one private. The public key could be published in a directory for anyone to use. The private key would remain secret. this encryption with the public key could only be undone with {\small the private key}. \par\vspace{0.05in}
+Diffie and Hellman demonstrated a key exchange protocol now called Diffie–Hellman key exchange based on the discrete logarithm problem. This allowed two strangers to agree on a shared secret over an insecure channel. What \emph{\textbf{they did not provide}} was a complete public-key encryption scheme. They explicitly asked whether a trapdoor function based on integer factorization could be constructed. That open question became the challenge that RSA would answer.
+
+\section{The Invention of RSA at MIT (1977)}
+\ \hspace{0.16in} Ron \textbf{R}ivest, Adi \textbf{S}hamir, and Leonard \textbf{A}dleman at the Massachusetts Institute of \ \hspace{0.3in}Technology spent much of 1977 searching for a practical public-key encryption scheme. Early attempts failed: knapsack-based systems proved insecure, polynomial constructions were too slow. Then \textbf{Rivest} had the key insight. Using \textbf{Euler's theorem} and \textbf{modular} \linebreak \textbf{exponentiation}, he constructed a scheme where encryption and decryption were both exponentiations modulo a composite number \textbf{\emph{n= p.q}}, the product of two large primes.
+
+The algorithm was elegant. Choose \emph{\textbf{p}} and \emph{\textbf{q}} large primes. Compute \emph{\textbf{n = p.q}} and $\varphi(n) = (p-1)(q-1)$. Select an encryption exponent $e$ coprime to $\varphi(n)$. Compute the decryption exponent $d$ as the modular inverse of $e$ modulo $\varphi(n)$. 
+
+\begin{center}
+\framebox{\textbf{Encrypt}} $\quad \longrightarrow \quad$ \framebox{\textbf{Decrypt}}
+\end{center}
+\begin{center}
+\boxed{\text{$c = m^e \bmod n$.}} \hspace{1cm} \boxed{\text{$m = c^d \bmod n$.}}
+\end{center}
+
+
+Security rests on the difficulty of factoring \emph{\textbf{n}}: without \emph{\textbf{p}} and \emph{\textbf{q}}, an attacker cannot \linebreak compute $\varphi(n)$ and therefore cannot find \emph{\textbf{d}} (The Coefficient of Decryption) from \emph{\textbf{e}} (The Coefficient of Encryption).
+
+Rivest, Shamir, and Adleman published their result in the \emph{Communications of the ACM} in February 1978 . Later that year, Martin Gardner described the algorithm in his \linebreak
+``Mathematical Games'' column in \emph{Scientific American}. Gardner included a specific \linebreak challenge ciphertext a 129-digit modulus known as RSA-129 and offered a \$100 prize for its  factorization. The challenge was not solved until 1994, after a massive distributed effort involving hundreds of volunteers and thousands of computer-years. This dramatic \linebreak demonstration both proved RSA's resilience and highlighted the rapid \linebreak advance of factoring algorithms.
+
+\section{The Secret Prior Discovery at GCHQ}
+
+In 1997, the British intelligence agency GCHQ declassified documents revealing that public-key cryptography had been invented earlier, in secret. In 1973, a GCHQ mathematician named Clifford Cocks devised a system virtually identical to RSA. His work was classified and never published. When the public RSA appeared in 1978, GCHQ could not acknowledge its own priority without compromising national security.
+
+Historical accounts now recognize Clifford as the first inventor, but the credit for \linebreak launching public-key cryptography as an open scientific field belongs unequivocally to Rivest, Shamir, and Adleman. The secret British work had no influence on the public development of cryptography, the MIT invention catalyzed the entire discipline.
+
+\section{Why This History Matters for the Rest of This Document}
+
+The problems that motivated RSA—secure communication without pre-shared secrets, \linebreak digital signatures, scalable key management remain central to modern cryptography. \linebreak The algorithm itself, as originally described in 1978, is mathematically unchanged. But everything around it has evolved: recommended key sizes, padding schemes, resistance to side-channel attacks, and the looming quantum threat.
+
+\vspace{2em}
+
+\textbf{\large The following Chapters 2,3,4 and 5} build on this historical foundation. They explain the mathematics rigorously, describe how RSA is implemented securely today, survey the attacks that have been discovered over forty years. The history tells us \textbf{\emph{Why}} RSA exists; the rest of the document tells us \textbf{\emph{How}} it works and \textbf{\emph{What}} attacks can possibly break it.

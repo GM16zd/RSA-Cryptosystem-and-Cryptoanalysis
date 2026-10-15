@@ -1,0 +1,620 @@
+\chapter{RSA Cryptosystem}
+\section{RSA Key Generation }
+RSA key generation is based on selecting two large prime numbers, \( p \) and \( q \), which are used to compute the modulus \( n = p \cdot q \). These primes are not chosen manually or deterministically, but generated using a Cryptographically Secure Pseudo-Random Number Generator (CSPRNG). The randomness of \( p \) and \( q \) is essential because RSA security depends on their unpredictability. If an attacker can predict or reproduce these primes, they can factor \( n \) and recover the private key.
+
+\textbf{Randomness} in cryptography is evaluated through entropy, which measures uncertainty in a source. High entropy means the output is highly unpredictable, while low entropy indicates structure or bias. In practice, randomness is assessed using statistical test suites such as NIST SP 800-22, Dieharder, or TestU01. These tools check properties like uniform distribution, independence of bits, and absence of detectable patterns.
+Modern systems generate randomness using operating system CSPRNGs  such as \texttt{/dev/urandom} on Linux or \texttt{BCryptGenRandom} on Windows. These generators collect entropy from physical and system-level noise, including timing variations, hardware events, and environmental fluctuations. This entropy is continuously mixed and expanded into secure random output used for cryptographic purposes.
+Once random candidates are generated, they are tested for primality using probabilistic algorithms such as Miller–Rabin, which efficiently confirm whether a number behaves like a prime with extremely high confidence.The size of RSA keys is also critical to security. The modulus \( n \) is typically 2048 bits or larger in modern systems. This means each prime \( p \) and \( q \) is about 1024 bits long. Higher security levels use 3072-bit or 4096-bit keys, where primes are correspondingly larger. Smaller sizes like 1024-bit RSA are considered insecure because advances in computation and factoring methods make them vulnerable.
+Larger key sizes increase the difficulty of factoring \( n \) exponentially, making attacks computationally infeasible with current technology. However, key size alone is not sufficient: even large keys are insecure if randomness is weak or predictable.
+
+After computing $n = p \cdot q$ and $\varphi(n) = (p-1)(q-1)$, we select a public exponent $e$ such that $\gcd(e, \varphi(n)) = 1$. This pair $(e, n)$ becomes the public key. In practice, $e = 65537$ is the near‑universal choice. Why? It is the Fermat prime $2^{16} + 1$, which has only two `1` bits in its binary representation ($10000000000000001_2$), making encryption (modular exponentiation) very fast. At the same time, it is large enough to thwart small‑exponent attacks that historically affected tiny values like $e = 3$. Using this well‑studied constant balances efficiency and security, which is why modern standards recommend it.
+
+The private key $d$ is then computed as the modular inverse of $e$ modulo $\varphi(n)$, 
+\[
+e \cdot d \equiv 1 \pmod{\varphi(n)}
+\]
+ This is efficiently found using the extended Euclidean algorithm. Unlike the public key, $d$ must be kept strictly confidential. It is typically stored in an encrypted keystore or a hardware security module (HSM), with access restricted to authorized processes or personnel. Compromising $d$ allows an attacker to decrypt any message intended for the key owner, effectively breaking the entire cryptosystem. Hence, securing the storage and handling of the private key is as vital as generating strong primes in the first place.
+
+
+
+\section{Encryption and Decryption :}
+
+\textbf{RSA Encryption}
+
+Given the public key \( (e,n)  \) and the plain-text \( m \), the encryption function $E$ is:
+\[
+C = E(m) \equiv m^e \pmod{n}
+\]
+where $C$ is the cipher text.
+
+\textbf{Remark :}
+the sender encrypts the message he wants to send using the receiver's public key.
+
+
+\textbf{RSA Decryption}
+
+Given the private key \( d  \) and the ciphertext \( C \), the decryption function is:
+\[
+ D(C) \equiv y^d \equiv m \pmod{n}
+\]
+
+
+
+\begin{table}[h]
+\centering
+\begin{tabular}{|c|c|}
+\hline
+\textbf{Receiver} & \textbf{Sender} \\
+\hline
+\multicolumn{2}{|c|}{\textbf{Key Creation}} \\
+\hline
+\multicolumn{1}{|l|}{
+\begin{tabular}{l}
+Choose secret primes $p$ and $q$. \\
+Choose encryption exponent $e$ \\
+with $\gcd(e,(p-1)(q-1)) = 1$. \\
+Compute $d$ satisfying \\
+$ed \equiv 1 \pmod{(p-1)(q-1)}$. \\
+Publish $N = pq$ and $e$.
+\end{tabular}
+}
+&
+\\
+\hline
+\multicolumn{2}{|c|}{\textbf{Encryption}} \\
+\hline
+&
+\begin{tabular}{l}
+Choose plaintext $m$. \\
+Use public key $(N,e)$ \\
+to compute $c \equiv m^e \pmod{N}$. \\
+Send ciphertext $c$.
+\end{tabular}
+\\
+\hline
+\multicolumn{2}{|c|}{\textbf{Decryption}} \\
+\hline
+\multicolumn{1}{|l|}{
+\begin{tabular}{l}
+Compute $m' \equiv c^d \pmod{N}$. \\
+Then $m' = m$.
+\end{tabular}
+}
+&
+\\
+\hline
+\end{tabular}
+\caption*{RSA cryptosystem in brief}
+\end{table}
+
+So in summary the RSA cryptosystem depends on the following dichotomy:
+\begin{itemize}
+    \item \textbf{Setup.} Let $p$ and $q$ be large primes, let $N = pq$, and let $e$ and $c$ be integers.
+    
+    \item \textbf{Problem.} Solve the congruence $x^e \equiv c \pmod{N}$ for the variable $x$.
+    
+    \item \textbf{Easy.} The receiver, who knows the values of $p$ and $q$, can easily solve for $x$.
+    
+    \item \textbf{Hard.} An adversary, who does not know the values of $p$ and $q$, cannot easily find $x$.
+    
+    \item \textbf{Dichotomy.} Solving $x^e \equiv c \pmod{N}$ is easy for a only the party who possesses the decomposition of $n$, but it is  hard for all other parties.
+\end{itemize}
+
+\section{RSA Proof of Correctness}
+
+Recall the RSA setup: one chooses two distinct large primes $p$ and $q$, computes the modulus $n = pq$ and Euler's totient $\varphi(n) = (p-1)(q-1)$,
+selects a public exponent $e$ with $\gcd(e,\varphi(n))=1$, and computes the private
+exponent $d \equiv e^{-1} \pmod{\varphi(n)}$. A plaintext $m \in \{0,1,\ldots,n-1\}$
+is encrypted as $ C \equiv m^e \pmod{n}$, and decryption recovers $m$ by computing
+$C^d \pmod{n}$.
+
+The key identity to verify is therefore
+\[
+  C^d \equiv (m^e)^d = m^{ed} \equiv m \pmod{n}.
+\]
+Because $d$ was chosen so that \[ ed \equiv 1 \pmod{\varphi(n)}
+\]
+ there exists an integer
+$k$ such that
+\[ed = 1 + k\varphi(n)\]
+The proof then splits naturally into two cases
+depending on whether $\gcd(m,n)=1$ or not.
+
+
+\subsubsection*{Case 1: $\gcd(m, n) = 1$}
+
+This is the generic case and occurs with overwhelming probability, since the proportion of integers in $\{0,1,2,\ldots,n-1\}$ that share a factor
+with $n$ is negligibly small when $p$ and $q$ are large.
+
+
+Since $\gcd(m,n)=1$, then by Euler's theorem 
+\[m^{\varphi(n)} \equiv 1 \pmod{n}\]
+therefore
+\[
+  m^{ed} \equiv m^{1 + k\varphi(n)} = m \cdot 1^k \equiv m\pmod{n} 
+\]
+
+\subsubsection*{Case 2: $\gcd(m, n) \neq 1$}
+
+Although this case breaks the RSA security unintentionally (it reveals the decomposition of $n$ by simply calculating $\gcd(C,n)$ because $\gcd(m,n) \neq 1 \implies \gcd(m,n) = p \implies \exists k \in \mathbb{N} \text{ such that }m = k \cdot p $ this means that $C \equiv m^e \equiv (k \cdot p)^e \pmod{n} \implies p \mid C \implies \gcd(C,n)=p $) and the fact that this case is extremely rare in practice, a complete proof of RSA correctness must address it. Since $n = pq$ with
+$p$ and $q$ prime, and since $0 \leq m < n$, the only non-trivial possibilities are
+$p \mid m$ or $q \mid m$, but not both (as that would require $n \mid m$, contradicting
+$m < n$). 
+\\By symmetry, assume without loss of generality that $p \mid m$ and
+$\gcd(m,q)=1$, so $m \equiv 0 \pmod{p}$, and therefore
+$m \equiv m^{ed} \equiv 0 \pmod{p}$.
+
+\\ Since $\gcd(m,q)=1$, Fermat's little theorem gives
+$m^{q-1} \equiv 1 \pmod{q}$. Now write $ed = 1 + k(p-1)(q-1)$. Since $(q-1)$ divides
+$(p-1)(q-1)$, we have
+\[
+  m^{ed} = m \cdot \bigl(m^{q-1}\bigr)^{k(p-1)} \equiv m \cdot 1 = m \pmod{q}.
+\]
+We have simultaneously
+\[
+  m^{ed} \equiv m \pmod{p} \quad \text{and} \quad m^{ed} \equiv m \pmod{q}.
+\]
+Since $p$ and $q$ are distinct primes, $\gcd(p,q)=1$, so by the Chinese Remainder
+Theorem there exists a unique residue modulo $n = pq$ satisfying both congruences. Since
+$m$ itself satisfies both, we conclude $m^{ed} \equiv m \pmod{n}$.
+
+
+
+\section{ Fast Modular Exponentiation (square-and-multiply algorithm)}
+Public-key cryptosystems such as RSA rely on modular exponentiation with very large numbers, which makes efficient computation essential for practical use. A direct method of exponentiation is far too slow because it would require an enormous number of multiplications when the exponent is large, as is the case in RSA, where the public exponent e and especially the private exponent d can be hundreds or thousands of bits long. To solve this problem, RSA uses the square-and-multiply algorithm, which computes exponentiation by scanning the binary representation of the exponent from left to right. At each step, the current result is squared, and if the current bit is 1, it is also multiplied by the base. This method greatly reduces the number of operations, since the number of squarings depends only on the bit-length of the exponent, and the number of multiplications depends on the number of 1 bits in its binary form. On average, for an exponent of bit-length t+1, the algorithm requires t squarings and about 0.5t multiplications. Compared with straightforward exponentiation, which is computationally impossible for cryptographic exponents, square-and-multiply makes RSA encryption and decryption feasible on modern computers.
+
+
+
+\subsection{Fast Encryption}
+\label{subsec:fast-enc}
+
+
+RSA encryption requires computing $c \equiv m^e \pmod{n}$, where $e$ is a
+large integer. Naive repeated multiplication would require $e-1$
+multiplications, which is completely infeasible for practical key sizes. The standard
+solution is the \textit{square-and-multiply} algorithm, also known as fast modular
+exponentiation or binary exponentiation.
+
+\subsubsection*{Algorithm Description}
+
+The key observation is that computing $m^e \pmod{n}$ can be decomposed by reading the
+binary representation of the exponent $e = \sum_{i=0}^{t} e_i \, 2^i$, where
+$e_i \in \{0,1\}$ and $e_t = 1$ is the most significant bit. The algorithm processes
+the bits of $e$ from left to right (most significant to least significant), maintaining
+a running result $R$ and performing at most one multiplication per bit.%
+\footnote{D.~E. Knuth, \textit{The Art of Computer Programming, Vol.~2: Seminumerical
+Algorithms}, 3rd~ed., Addison-Wesley, 1997, p.~461.
+Knuth describes this technique as: \textit{``one of the most important algorithms
+in all of computational mathematics''}.}
+
+\begin{algorithm}[H]
+\caption{Square-and-Multiply (Left-to-Right Binary Exponentiation)}
+\label{alg:sqmul}
+\KwIn{Base $m$, exponent $e > 0$, modulus $n$; binary representation $e = (e_t e_{t-1} \ldots e_0)_2$}
+\KwOut{$R \equiv m^e \pmod{n}$}
+$R \gets 1$\;
+\For{$i \gets t$ \texttt{downto} $0$}{
+    $R \gets R^2 \bmod n$ \tcc{Square step}
+    \eIf{$e_i = 1$}{
+        $R \gets R \cdot m \bmod n$ \tcc{Multiply step}
+    }{
+        \tcc{Do nothing}
+    }
+}
+\Return $R$\;
+\end{algorithm}
+
+\subsubsection*{Proof of Correctness}
+
+\textbf{Claim. }Algorithm~\ref{alg:sqmul} returns $m^e \bmod n$ after at most $2\lfloor\log_2 e\rfloor$
+modular multiplications.
+
+
+\begin{proof}
+Let $R_i$ denote the value of $R$ after processing bit $e_i$. We show by induction that,
+after processing bits $e_t, e_{t-1}, \ldots, e_i$, the accumulated exponent of $m$ in $R$
+equals the integer $(e_t e_{t-1} \cdots e_i)_2$.
+
+\textit{Base case.} Before any iteration, $R = 1 = m^0$, corresponding to an empty
+binary prefix.
+
+\textit{Inductive step.} Suppose before processing bit $e_i$ the running exponent is
+$v = (e_t \cdots e_{i+1})_2$. After the squaring step, the exponent becomes $2v$, and
+if $e_i = 1$ the subsequent multiply step adds $1$, yielding $2v + e_i = (e_t \cdots e_i)_2$.
+This matches the binary prefix extended by one bit, completing the induction.
+
+After processing all $t+1$ bits, the accumulated exponent is $(e_t \cdots e_0)_2 = e$,
+so $R \equiv m^e \pmod{n}$.
+
+Regarding complexity: the loop executes exactly $t+1 = \lfloor\log_2 e\rfloor + 1$
+iterations, each involving one squaring and at most one multiplication, giving at most
+$2\lfloor\log_2 e\rfloor + 2$ modular multiplications in total.%
+\footnote{A.~J. Menezes, P.~C. van Oorschot, and S.~A. Vanstone,
+\textit{Handbook of Applied Cryptography}, \textit{op.\ cit.}, p.~615.
+The authors note: \textit{``this method requires at most $2(\lfloor\log_2 e\rfloor)$
+modular multiplications, compared to $e-1$ for naïve exponentiation''}.}
+\end{proof}
+
+\subsubsection*{Worked Example}
+
+\begin{example}
+Compute $c \equiv 7^{13} \pmod{33}$.
+
+The binary representation of $13$ is $(1101)_2$. We proceed as follows:
+
+\begin{center}
+\begin{tabular}{ccccc}
+\toprule
+Step & Bit $e_i$ & Square: $R \leftarrow R^2 \bmod 33$ & Multiply: $R \leftarrow R \cdot 7 \bmod 33$ & $R$ \\
+\midrule
+Init  &   --   & --                    & --                       & $1$  \\
+$i=3$ &   $1$  & $1^2 = 1$             & $1 \cdot 7 = 7$          & $7$  \\
+$i=2$ &   $1$  & $7^2 = 49 \equiv 16$  & $16 \cdot 7 = 112 \equiv 13$ & $13$ \\
+$i=1$ &   $0$  & $13^2 = 169 \equiv 4$ & (skipped)                & $4$  \\
+$i=0$ &   $1$  & $4^2 = 16$            & $16 \cdot 7 = 112 \equiv 13$ & $13$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+Therefore $7^{13} \equiv 13 \pmod{33}$, achieved in 6 modular operations instead of 12.
+\end{example}
+\newpage
+\subsubsection*{Python Implementation}
+
+\lstset{style=pythonstyle}
+\begin{lstlisting}
+def fast_encrypt(m: int, e: int, n: int) -> int:
+    """
+    Compute m^e mod n using the square-and-multiply method.
+    Equivalent to Python's built-in pow(m, e, n).
+    """
+    result = 1
+    m = m % n
+    while e > 0:
+        if e % 2 == 1:           # current bit is 1 -> multiply
+            result = (result * m) % n
+        e >>= 1                  # shift to next bit
+        m = (m * m) % n          # square the base
+    return result
+
+# Example: encrypt m=7 with public key (e=13, n=33)
+ciphertext = fast_encrypt(7, 13, 33)
+print(f"Ciphertext: {ciphertext}")   # Output: 13
+\end{lstlisting}
+
+
+\subsection{Fast Decryption}
+\label{subsec:fast-dec}
+
+
+RSA decryption computes $m \equiv c^d \pmod{n}$, where $d$ is typically as large as the
+modulus $n$ itself (2048 bits or more). While the square-and-multiply algorithm already
+reduces this to $O(\log d)$ multiplications modulo $n$, each such multiplication involves
+numbers of size $\sim n$. A considerably faster approach -- reducing execution time by a
+factor of approximately four in practice -- exploits the known factorization $n = pq$ via
+the Chinese Remainder Theorem.
+\footnote{J.~Katz and Y.~Lindell, \textit{Introduction to Modern Cryptography}, 3rd~ed.,
+CRC Press, 2020, p.~427.
+The authors remark: \textit{``CRT-based decryption gives a roughly four-fold speedup
+over direct computation of $c^d \bmod n$''}.}
+
+\subsubsection*{Algorithm Description}
+
+The idea is to compute $c^d$ separately modulo $p$ and modulo $q$, working with integers
+roughly half the size of $n$, and then recombine the two results via the CRT. \\ Define the
+reduced private exponents
+\[
+  d_p \equiv d \pmod{p-1}, \qquad d_q \equiv d \pmod{q-1},
+\]
+and the CRT coefficient $q_{\text{inv}} \equiv q^{-1} \pmod{p}$.
+\begin{algorithm}[H]
+\caption{Fast RSA Decryption via CRT (Garner's Method)}
+\label{alg:crt-dec}
+\begin{algorithmic}
+\Require Ciphertext $c$, primes $p$, $q$, exponents $d_p = d \bmod (p-1)$,
+         $d_q = d \bmod (q-1)$, coefficient $q_{\text{inv}} = q^{-1} \bmod p$
+\Ensure Plaintext $m \equiv c^d \pmod{n}$
+\State $m_p \leftarrow c^{d_p} \bmod p$ \Comment{Half-size exponentiation mod $p$}
+\State $m_q \leftarrow c^{d_q} \bmod q$ \Comment{Half-size exponentiation mod $q$}
+\State $h \leftarrow q_{\text{inv}} \cdot (m_p - m_q) \bmod p$ \Comment{Garner recombination}
+\State $m \leftarrow m_q + h \cdot q$
+\State \Return $m$
+\end{algorithmic}
+\end{algorithm}
+\subsubsection*{Proof of Correctness}
+
+\textbf{Claim.}
+Algorithm~\ref{alg:crt-dec} returns $m \equiv c^d \pmod{n}$.
+
+\begin{proof}
+We first verify the partial results. By Fermat's little theorem, for any $c$ with
+$\gcd(c,p)=1$,
+\[
+  c^{p-1} \equiv 1 \pmod{p},
+\]
+so $c^d = c^{d_p + k(p-1)} \equiv c^{d_p} \pmod{p}$, giving $m_p \equiv c^d \pmod{p}$.
+An identical argument yields $m_q \equiv c^d \pmod{q}$.
+
+We must then find $m$ such that $m \equiv m_p \pmod{p}$ and $m \equiv m_q \pmod{q}$.
+The Garner recombination computes%
+\footnote{R.~Garner, ``The residue number system,'' \textit{IRE Transactions on
+Electronic Computers}, vol.~EC-8, no.~2, pp.~140--147, 1959.
+Garner's original formulation states: \textit{``the mixed-radix representation
+provides an efficient method for CRT reconstruction without large intermediate values''}.}
+\[
+  h \equiv q_{\text{inv}}(m_p - m_q) \pmod{p},
+\]
+and sets $m = m_q + hq$. We verify:
+\begin{itemize}
+  \item \textbf{Modulo $q$:} $m = m_q + hq \equiv m_q \pmod{q}$. 
+  \item \textbf{Modulo $p$:} $m \equiv m_q + hq \equiv m_q + q_{\text{inv}}(m_p - m_q) \cdot q \pmod{p}$.
+  Since $q_{\text{inv}} \cdot q \equiv 1 \pmod{p}$, this simplifies to
+  $m \equiv m_q + (m_p - m_q) = m_p \pmod{p}$. 
+\end{itemize}
+By the CRT, since $\gcd(p,q)=1$, the solution is unique modulo $n = pq$. Because
+$m_q < q$ and $0 \leq h < p$, we have $0 \leq m = m_q + hq < q + pq = n + q$, and
+since $m < n$ by construction, no final reduction is needed.
+
+Since $m_p \equiv c^d \pmod{p}$ and $m_q \equiv c^d \pmod{q}$, and $c^d \bmod n$ is
+also the unique solution modulo $n$, we conclude $m = c^d \bmod n$.
+\end{proof}
+
+\begin{remark}[Speedup Analysis]
+Each of the two exponentiations in Algorithm~\ref{alg:crt-dec} operates on a modulus of
+$\sim \log_2 p \approx k/2$ bits (where $k = \log_2 n$) with an exponent of similar
+size. The cost of a modular multiplication with a $b$-bit modulus scales as $O(b^2)$
+(or $O(b\log b \log\log b)$ with fast multiplication). Replacing one $k$-bit exponentiation
+by two $(k/2)$-bit ones reduces the multiplication cost by approximately
+$2 \times (1/2)^2 = 1/2$, giving a theoretical speedup of factor 4 over direct
+computation.%
+\footnote{A.~J. Menezes, P.~C. van Oorschot, and S.~A. Vanstone,
+\textit{Handbook of Applied Cryptography}, \textit{op.\ cit.}, p.~612.}
+\end{remark}
+
+\subsubsection*{Worked Example}
+
+\begin{example}
+Let $p = 11$, $q = 13$, so $n = 143$, $\varphi(n) = 120$. Choose $e = 7$; then
+$d \equiv 7^{-1} \pmod{120} = 103$. Suppose $c = 6$ is the ciphertext.
+
+\medskip
+\textbf{Precomputed values:}
+\[
+  d_p = 103 \bmod 10 = 3, \quad d_q = 103 \bmod 12 = 7, \quad
+  q_{\text{inv}} = 13^{-1} \bmod 11 \equiv 6 \pmod{11}.
+\]
+
+\textbf{Step 1 -- Partial exponentiations:}
+\[
+  m_p = 6^3 \bmod 11 = 216 \bmod 11 = 7, \quad
+  m_q = 6^7 \bmod 13.
+\]
+Computing $6^7 \bmod 13$ by squaring: $6^2=36\equiv 10$, $6^4\equiv 100\equiv 9$,
+$6^7 = 6^4 \cdot 6^2 \cdot 6^1 \equiv 9 \cdot 10 \cdot 6 = 540 \equiv 8 \pmod{13}$.
+
+\textbf{Step 2 -- Garner recombination:}
+\[
+  h = 6 \cdot (7 - 8) \bmod 11 = 6 \cdot (-1) \bmod 11 = -6 \bmod 11 = 5.
+\]
+\[
+  m = 8 + 5 \cdot 13 = 8 + 65 = 73.
+\]
+
+\textbf{Verification:} $c^d = 6^{103} \bmod 143$. Using Python's \texttt{pow(6,103,143)}
+gives $73$. \checkmark
+\end{example}
+\newpage
+\subsubsection*{Python Implementation}
+
+\lstset{style=pythonstyle}
+\begin{lstlisting}
+def mod_inverse(a: int, m: int) -> int:
+    """Extended Euclidean algorithm to compute a^{-1} mod m."""
+    g, x, _ = extended_gcd(a, m)
+    if g != 1:
+        raise ValueError("Modular inverse does not exist.")
+    return x % m
+
+def extended_gcd(a: int, b: int):
+    if a == 0:
+        return b, 0, 1
+    g, x, y = extended_gcd(b % a, a)
+    return g, y - (b // a) * x, x
+
+def fast_decrypt_crt(c: int, p: int, q: int, d: int) -> int:
+    """
+    RSA decryption using the Chinese Remainder Theorem (Garner's method).
+    Approximately 4x faster than direct pow(c, d, p*q).
+    """
+    n   = p * q
+    d_p = d % (p - 1)                  # reduced exponent mod p
+    d_q = d % (q - 1)                  # reduced exponent mod q
+    q_inv = mod_inverse(q, p)          # CRT coefficient
+
+    m_p = pow(c, d_p, p)               # half-size exponentiation mod p
+    m_q = pow(c, d_q, q)               # half-size exponentiation mod q
+
+    h = (q_inv * (m_p - m_q)) % p     # Garner recombination
+    m = m_q + h * q                    # final plaintext
+
+    return m % n
+
+# ------------------------------------------------------------------
+# Example: p=11, q=13, e=7, d=103, ciphertext c=6
+p, q, d, c = 11, 13, 103, 6
+plaintext = fast_decrypt_crt(c, p, q, d)
+print(f"Decrypted: {plaintext}")       # Output: 73
+
+# Verify against direct decryption
+n = p * q
+assert plaintext == pow(c, d, n), "CRT decryption mismatch!"
+print("Verification passed.")
+\end{lstlisting}
+
+\textbf{Remark}
+
+This example shows how RSA encryption and decryption rely on repeated modular squaring and selective multiplication. Even though the exponents are large in real systems, the square-and-multiply algorithm reduces the complexity from linear to logarithmic in the number of bits of the exponent, making RSA practically usable.
+
+
+\section{Authentication via Digital Signature in RSA}
+
+RSA digital signatures provide a way to verify the authenticity and integrity of a message.
+The process relies on a pair of keys: a \textbf{private key}, known only to the signer,
+and a \textbf{public key}, available to anyone. To sign a message $m$, the sender computes
+a signature using the private key $(d, n)$ as follows:
+   $$ \sigma = m^d \mod n$$
+The signature $\sigma$ is then sent along with the message. To verify the signature,
+the receiver uses the sender's public key $(e, n)$ and computes:
+  $$  m' = \sigma^e \mod n$$
+If $m'$ matches the original message $m$, the signature is considered valid. This works
+because of the mathematical relationship between the keys in RSA: encrypting with one key
+and decrypting with the other always returns the original value. Since only the sender
+knows the private key, a valid signature proves that the message was signed by them and
+has not been altered in transit.
+
+
+\section{RSA Conceptual Implementation :}
+\textbf{Remark: }The implementation above corresponds to what is known as textbook RSA — a purely mathematical description intended for instructional purposes. In real-world systems, using textbook RSA directly is unsafe. In the following chapters, we will explore various attack that exploit even minor implementation flaws, demonstrating why secure RSA requires careful attention to padding, key generation, and side‑channel resistance.
+\vspace{2em}
+\lstset{style=pythonstyle}
+\begin{lstlisting}[language=Python, caption=Basic RSA Implementation in Python]
+import random
+
+# ------------------ Miller-Rabin Primality Test ------------------
+def is_prime(n, k=5):
+    """Return True if n is probably prime (error probability 2^{-k})."""
+    if n < 2:
+        return False
+    if n in (2, 3):
+        return True
+    if n % 2 == 0:
+        return False
+
+    # Write n-1 = d * 2^s
+    d = n - 1
+    s = 0
+    while d % 2 == 0:
+        d //= 2
+        s += 1
+
+    # Test k witnesses
+    for _ in range(k):
+        a = random.randrange(2, n - 1)
+        x = pow(a, d, n)
+        if x == 1 or x == n - 1:
+            continue
+        for _ in range(s - 1):
+            x = (x * x) % n
+            if x == n - 1:
+                break
+        else:
+            return False
+    return True
+
+def generate_prime(bits=8):
+    """Generate a random prime of roughly 'bits' bits."""
+    while True:
+        p = random.getrandbits(bits)
+        # ensure it is odd and large enough
+        p |= (1 << bits - 1) | 1
+        if is_prime(p):
+            return p
+
+# ------------------ Extended Euclidean Algorithm ------------------
+def egcd(a, b):
+    """Return (g, x, y) such that a*x + b*y = g = gcd(a, b)."""
+    if a == 0:
+        return (b, 0, 1)
+    else:
+        g, x1, y1 = egcd(b % a, a)
+        return (g, y1 - (b // a) * x1, x1)
+
+def modinv(a, m):
+    """Return the modular inverse of a modulo m (assumes gcd(a,m)=1)."""
+    g, x, _ = egcd(a, m)
+    if g != 1:
+        raise ValueError("Inverse does not exist")
+    return x % m
+
+# ------------------ Square‑and‑Multiply (Left‑to‑Right) ------------------
+def square_and_multiply(base, exp, mod):
+    """Return base^exp mod mod using binary exponentiation."""
+    result = 1
+    bits = bin(exp)[2:]   # e.g., '1011'
+    for bit in bits:
+        result = (result * result) % mod      # square
+        if bit == '1':
+            result = (result * base) % mod    # multiply
+    return result
+
+# ------------------ Garner's CRT for RSA Decryption ------------------
+def rsa_decrypt_crt(c, p, q, d):
+    """
+    Fast RSA decryption using Garner's method.
+    Assumes n = p*q, ed ≡ 1 mod φ(n).
+    """
+    d_p = d % (p - 1)
+    d_q = d % (q - 1)
+    q_inv = modinv(q, p)
+
+    m_p = square_and_multiply(c, d_p, p)   # c^d_p mod p
+    m_q = square_and_multiply(c, d_q, q)   # c^d_q mod q
+
+    # Garner recombination
+    h = (q_inv * (m_p - m_q)) % p
+    m = m_q + h * q
+    return m
+
+# ------------------ RSA Key Generation ------------------
+def generate_rsa_keys(bits=8):
+    """Generate RSA keys. For demo only — uses small primes."""
+    p = generate_prime(bits)
+    q = generate_prime(bits)
+    while q == p:
+        q = generate_prime(bits)
+    n = p * q
+    phi = (p - 1) * (q - 1)
+
+    # Choose e (usually 65537, here small for demo)
+    e = 65537
+    if phi % e == 0:
+        e = 257
+    d = modinv(e, phi)
+
+    public_key = (e, n)
+    private_key = (d, p, q)
+    return public_key, private_key
+
+# ------------------ Encryption ------------------
+def encrypt(msg, public_key):
+    """Encrypt a message (integer) using RSA public key (e, n)."""
+    e, n = public_key
+    return square_and_multiply(msg, e, n)
+
+# ------------------ Decryption (with CRT) ------------------
+def decrypt(cipher, private_key):
+    """Decrypt ciphertext using CRT‑based fast decryption."""
+    d, p, q = private_key
+    return rsa_decrypt_crt(cipher, p, q, d)
+
+# ------------------ Demonstration ------------------
+if __name__ == "__main__":
+    print("=== Basic RSA Implementation (Textbook RSA) ===\n")
+
+    public_key, private_key = generate_rsa_keys(bits=8)
+    e, n = public_key
+    print(f"Public key:  (e = {e}, n = {n})")
+    print(f"Private key: (d = {private_key[0]} kept secret, p = {private_key[1]}, q = {private_key[2]})")
+
+    original = 42
+    print(f"\nOriginal message: {original}")
+
+    cipher = encrypt(original, public_key)
+    print(f"Encrypted ciphertext: {cipher}")
+
+    decrypted = decrypt(cipher, private_key)
+    print(f"Decrypted plaintext:  {decrypted}")
+
+    assert original == decrypted, "Decryption failed!"
+    print("\n✓ Encryption / decryption successful.")
+\end{lstlisting}
